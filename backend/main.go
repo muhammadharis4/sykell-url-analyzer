@@ -9,6 +9,7 @@ import (
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/config"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/routes"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
 )
 
 func main() {
@@ -42,11 +43,12 @@ func main() {
 	// Initialize router
 	router := gin.Default()
 
+	// Add error handling middleware
+	router.Use(middleware.ErrorHandler())
+
 	// Basic health check endpoint
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"message": "Sykell URL Analyzer API is running",
+		middleware.SendSuccessResponse(c, 200, "Sykell URL Analyzer API is running", gin.H{
 			"version": "1.0.0",
 		})
 	})
