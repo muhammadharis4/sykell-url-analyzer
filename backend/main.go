@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/config"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/routes"
 )
 
 func main() {
@@ -44,11 +45,14 @@ func main() {
 	// Basic health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"status": "ok",
+			"status":  "ok",
 			"message": "Sykell URL Analyzer API is running",
 			"version": "1.0.0",
 		})
 	})
+
+	// Setup API routes
+	routes.SetupRoutes(router, db)
 
 	// Start server
 	port := os.Getenv("PORT")
