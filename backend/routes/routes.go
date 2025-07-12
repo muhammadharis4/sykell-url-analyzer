@@ -12,16 +12,16 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	urlController := controllers.NewURLController(db)
 	crawlController := controllers.NewCrawlController(db)
 
-	// API v1 group
-	v1 := router.Group("/api/v1")
+	// API group
+	api := router.Group("/api")
 	
 	// URL routes
-	urls := v1.Group("/urls")
+	urls := api.Group("/urls")
 	{
-		urls.POST("", urlController.AddURL)                      // POST /api/v1/urls
-		urls.GET("", urlController.GetURLs)                      // GET /api/v1/urls  
-		urls.GET("/:id", urlController.GetURL)                   // GET /api/v1/urls/123
-		urls.DELETE("/:id", urlController.DeleteURL)             // DELETE /api/v1/urls/123
-		urls.GET("/:id/results", crawlController.GetCrawlResults) // GET /api/v1/urls/123/results
+		urls.POST("", urlController.AddURL)                      // POST /api/urls
+		urls.GET("", urlController.GetURLs)                      // GET /api/urls  
+		urls.GET("/:id", urlController.GetURL)                   // GET /api/urls/123
+		urls.DELETE("/:id", urlController.DeleteURL)             // DELETE /api/urls/123
+		urls.GET("/:id/results", crawlController.GetCrawlResults) // GET /api/urls/123/results
 	}
 }
