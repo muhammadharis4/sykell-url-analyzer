@@ -89,9 +89,9 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 		return
 	}
 
-	// Get URL with its crawl results and links
+	// Check if URL exists
 	var url models.URL
-	if err := cc.db.Preload("CrawlResults").Preload("CrawlResults.Links").First(&url, id).Error; err != nil {
+	if err := cc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "URL not found",
@@ -104,8 +104,17 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 		return
 	}
 
+	// Get crawl results for this URL
+	var crawlResults []models.CrawlResult
+	if err := cc.db.Preload("Links").Where("url_id = ?", id).Find(&crawlResults).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve crawl results",
+		})
+		return
+	}
+
 	// Check if crawl results exist
-	if len(url.CrawlResults) == 0 {
+	if len(crawlResults) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "No crawl results found for this URL",
 			"url":   url,
@@ -115,6 +124,6 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"url":     url,
-		"results": url.CrawlResults,
+		"results": crawlResults,
 	})
 }
