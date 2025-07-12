@@ -1,26 +1,9 @@
 # Go build output
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
 backend
 
 # Environment variables
 .env
 .env.local
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Go workspace file
-go.work
 
 # IDE specific files
 .vscode/
