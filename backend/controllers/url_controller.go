@@ -14,7 +14,9 @@ type URLController struct {
 }
 
 func NewURLController(db *gorm.DB) *URLController {
-	return &URLController{db: db}
+	return &URLController{
+		db: db,
+	}
 }
 
 // AddURL - POST /api/v1/urls
@@ -100,4 +102,44 @@ func (uc *URLController) GetURL(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, url)
+}
+
+// DeleteURL - DELETE /api/v1/urls/:id
+func (uc *URLController) DeleteURL(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid URL ID",
+		})
+		return
+	}
+
+	// Check if URL exists
+	var url models.URL
+	if err := uc.db.First(&url, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "URL not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URL",
+		})
+		return
+	}
+
+	// Delete associated crawl results and links (cascade delete)
+	// GORM will handle the cascade deletion based on foreign key constraints
+	if err := uc.db.Delete(&url).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete URL",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "URL deleted successfully",
+		"url_id": id,
+	})
 }
