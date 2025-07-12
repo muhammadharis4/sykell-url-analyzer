@@ -21,6 +21,5 @@ Thumbs.db
 # Go workspace file
 go.work
 
-# Temporary files
-*.tmp
-tmp/
+# IDE specific files
+.vscode/
