@@ -7,15 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/services"
 )
 
 type URLController struct {
-	db *gorm.DB
+	db             *gorm.DB
+	crawlerService *services.CrawlerService
 }
 
 func NewURLController(db *gorm.DB) *URLController {
 	return &URLController{
-		db: db,
+		db:             db,
+		crawlerService: services.NewCrawlerService(db),
 	}
 }
 
@@ -45,7 +48,7 @@ func (uc *URLController) AddURL(c *gin.Context) {
 	// Create new URL
 	url := models.URL{
 		URL:    request.URL,
-		Status: "queued",
+		Status: "running", // Start as running since we'll begin crawling immediately
 	}
 
 	if err := uc.db.Create(&url).Error; err != nil {
@@ -55,9 +58,18 @@ func (uc *URLController) AddURL(c *gin.Context) {
 		return
 	}
 
+	// Start crawling automatically in a goroutine (non-blocking)
+	go func() {
+		if err := uc.crawlerService.CrawlURL(url.ID); err != nil {
+			// Log error (in production, you'd want proper logging)
+			// The crawler service already updates the status to "error"
+		}
+	}()
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "URL added successfully",
+		"message": "URL added and crawling started automatically",
 		"url":     url,
+		"status":  "running",
 	})
 }
 

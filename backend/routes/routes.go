@@ -22,7 +22,6 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		urls.GET("", urlController.GetURLs)                      // GET /api/v1/urls  
 		urls.GET("/:id", urlController.GetURL)                   // GET /api/v1/urls/123
 		urls.DELETE("/:id", urlController.DeleteURL)             // DELETE /api/v1/urls/123
-		urls.POST("/:id/crawl", crawlController.StartCrawl)      // POST /api/v1/urls/123/crawl
 		urls.GET("/:id/results", crawlController.GetCrawlResults) // GET /api/v1/urls/123/results
 	}
 }
