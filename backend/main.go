@@ -5,11 +5,17 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/config"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 )
 
 func main() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
 	// Load configuration
 	cfg := config.Load()
 
