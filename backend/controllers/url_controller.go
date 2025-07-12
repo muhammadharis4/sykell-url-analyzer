@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/services"
-	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
 )
 
 type URLController struct {
@@ -29,23 +28,19 @@ func (uc *URLController) AddURL(c *gin.Context) {
 		URL string `json:"url" binding:"required"`
 	}
 
-	// Validate JSON binding
 	if err := c.ShouldBindJSON(&request); err != nil {
-		middleware.SendValidationError(c, err)
-		return
-	}
-
-	// Validate URL format
-	if err := middleware.ValidateURL(request.URL); err != nil {
-		middleware.SendErrorResponse(c, http.StatusBadRequest, middleware.ErrValidationFailed, err.Error(), nil)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid URL provided",
+		})
 		return
 	}
 
 	// Check if URL already exists
 	var existingURL models.URL
 	if err := uc.db.Where("url = ?", request.URL).First(&existingURL).Error; err == nil {
-		middleware.SendErrorResponse(c, http.StatusConflict, middleware.ErrConflict, "URL already exists", gin.H{
-			"existing_url": existingURL,
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "URL already exists",
+			"url":   existingURL,
 		})
 		return
 	}
@@ -57,7 +52,9 @@ func (uc *URLController) AddURL(c *gin.Context) {
 	}
 
 	if err := uc.db.Create(&url).Error; err != nil {
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to save URL", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to save URL",
+		})
 		return
 	}
 
@@ -69,9 +66,10 @@ func (uc *URLController) AddURL(c *gin.Context) {
 		}
 	}()
 
-	middleware.SendSuccessResponse(c, http.StatusCreated, "URL added and crawling started automatically", gin.H{
-		"url":    url,
-		"status": "running",
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "URL added and crawling started automatically",
+		"url":     url,
+		"status":  "running",
 	})
 }
 
@@ -80,13 +78,14 @@ func (uc *URLController) GetURLs(c *gin.Context) {
 	var urls []models.URL
 	
 	if err := uc.db.Order("created_at desc").Find(&urls).Error; err != nil {
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to retrieve URLs", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URLs",
+		})
 		return
 	}
 
-	middleware.SendSuccessResponse(c, http.StatusOK, "URLs retrieved successfully", gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"urls": urls,
-		"count": len(urls),
 	})
 }
 
@@ -94,28 +93,36 @@ func (uc *URLController) GetURLs(c *gin.Context) {
 func (uc *URLController) GetURL(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		middleware.SendErrorResponse(c, http.StatusBadRequest, middleware.ErrBadRequest, "Invalid URL ID format", nil)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid URL ID",
+		})
 		return
 	}
 
 	var url models.URL
 	if err := uc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			middleware.SendErrorResponse(c, http.StatusNotFound, middleware.ErrNotFound, "URL not found", nil)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "URL not found",
+			})
 			return
 		}
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to retrieve URL", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URL",
+		})
 		return
 	}
 
-	middleware.SendSuccessResponse(c, http.StatusOK, "URL retrieved successfully", url)
+	c.JSON(http.StatusOK, url)
 }
 
 // DeleteURL - DELETE /api/urls/:id
 func (uc *URLController) DeleteURL(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		middleware.SendErrorResponse(c, http.StatusBadRequest, middleware.ErrBadRequest, "Invalid URL ID format", nil)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid URL ID",
+		})
 		return
 	}
 
@@ -123,21 +130,28 @@ func (uc *URLController) DeleteURL(c *gin.Context) {
 	var url models.URL
 	if err := uc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			middleware.SendErrorResponse(c, http.StatusNotFound, middleware.ErrNotFound, "URL not found", nil)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "URL not found",
+			})
 			return
 		}
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to retrieve URL", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URL",
+		})
 		return
 	}
 
 	// Delete associated crawl results and links (cascade delete)
 	// GORM will handle the cascade deletion based on foreign key constraints
 	if err := uc.db.Delete(&url).Error; err != nil {
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to delete URL", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete URL",
+		})
 		return
 	}
 
-	middleware.SendSuccessResponse(c, http.StatusOK, "URL deleted successfully", gin.H{
-		"deleted_url_id": id,
+	c.JSON(http.StatusOK, gin.H{
+		"message": "URL deleted successfully",
+		"url_id": id,
 	})
 }

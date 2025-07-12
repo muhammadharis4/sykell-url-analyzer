@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
-	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
 )
 
 type CrawlController struct {
@@ -24,7 +23,9 @@ func NewCrawlController(db *gorm.DB) *CrawlController {
 func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		middleware.SendErrorResponse(c, http.StatusBadRequest, middleware.ErrBadRequest, "Invalid URL ID format", nil)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid URL ID",
+		})
 		return
 	}
 
@@ -32,34 +33,30 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	var url models.URL
 	if err := cc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			middleware.SendErrorResponse(c, http.StatusNotFound, middleware.ErrNotFound, "URL not found", nil)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "URL not found",
+			})
 			return
 		}
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to retrieve URL", nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URL",
+		})
 		return
 	}
 
 	// Get crawl results for this URL
 	var crawlResults []models.CrawlResult
 	if err := cc.db.Preload("Links").Where("url_id = ?", id).Find(&crawlResults).Error; err != nil {
-		middleware.SendErrorResponse(c, http.StatusInternalServerError, middleware.ErrInternalServerError, "Failed to retrieve crawl results", nil)
-		return
-	}
-
-	// Check if crawl results exist
-	if len(crawlResults) == 0 {
-		// Return the URL with empty results instead of an error
-		middleware.SendSuccessResponse(c, http.StatusOK, "No crawl results found yet", gin.H{
-			"url":     url,
-			"results": []models.CrawlResult{},
-			"status":  url.Status,
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve crawl results",
 		})
 		return
 	}
 
-	middleware.SendSuccessResponse(c, http.StatusOK, "Crawl results retrieved successfully", gin.H{
-		"url":          url,
-		"results":      crawlResults,
-		"results_count": len(crawlResults),
+	// Return results (empty array if no results yet)
+	c.JSON(http.StatusOK, gin.H{
+		"url":     url,
+		"results": crawlResults,
+		"count":   len(crawlResults),
 	})
 }
