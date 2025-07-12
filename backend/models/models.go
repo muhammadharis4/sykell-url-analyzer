@@ -14,9 +14,6 @@ type URL struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	// Relationship - one URL can have one crawl result
-	CrawlResult *CrawlResult `json:"crawl_result,omitempty"`
 }
 
 // CrawlResult stores the analysis results for a URL
@@ -38,7 +35,6 @@ type CrawlResult struct {
 	CrawledAt        time.Time `json:"crawled_at"`
 	
 	// Relationships
-	URL   URL    `json:"url" gorm:"foreignKey:URLID"`
 	Links []Link `json:"links,omitempty"`
 }
 
@@ -50,7 +46,4 @@ type Link struct {
 	Type         string `json:"type"` // internal, external
 	StatusCode   int    `json:"status_code"`
 	IsAccessible bool   `json:"is_accessible"`
-	
-	// Relationship
-	CrawlResult CrawlResult `json:"-" gorm:"foreignKey:CrawlResultID"`
 }
