@@ -2,14 +2,12 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/config"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/routes"
-	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
 )
 
 func main() {
@@ -33,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to run migrations:", err)
 	}
-	log.Println("Database migrations completed")
+	log.Println("✅ Database migrations completed")
 
 	// Set Gin mode based on environment
 	if cfg.Environment == "production" {
@@ -43,12 +41,11 @@ func main() {
 	// Initialize router
 	router := gin.Default()
 
-	// Add error handling middleware
-	router.Use(middleware.ErrorHandler())
-
 	// Basic health check endpoint
 	router.GET("/health", func(c *gin.Context) {
-		middleware.SendSuccessResponse(c, 200, "Sykell URL Analyzer API is running", gin.H{
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"message": "Sykell URL Analyzer API is running",
 			"version": "1.0.0",
 		})
 	})
@@ -57,10 +54,7 @@ func main() {
 	routes.SetupRoutes(router, db)
 
 	// Start server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := "8080" // Simple default port
 
 	log.Printf("🚀 Server starting on port %s", port)
 	log.Printf("🔗 Health check: http://localhost:%s/health", port)
