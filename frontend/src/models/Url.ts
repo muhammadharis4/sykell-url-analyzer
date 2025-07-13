@@ -1,5 +1,5 @@
 // Core URL entity
-export interface URL {
+export interface UrlWithCrawl {
     id: number;
     url: string;
     status: "queued" | "running" | "completed" | "error";
@@ -10,3 +10,5 @@ export interface URL {
     external_links: number;
     broken_links: number;
 }
+
+

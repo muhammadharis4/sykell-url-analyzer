@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Paper,
     Table,
@@ -17,7 +18,7 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { Refresh, Search } from "@mui/icons-material";
-import { URL } from "../models/Url";
+import { UrlWithCrawl } from "../models/Url";
 import { getUrlsWithCrawls } from "../services/crawls";
 import { TableColumn } from "../types/Table";
 import { toast } from "react-toastify";
@@ -61,8 +62,9 @@ const columns: TableColumn[] = [
  * Dashboard component to display URLs
  */
 const Dashboard = () => {
+    const navigate = useNavigate();
     // State for data - null represents data not fetched, array represents fetched data (empty or with items)
-    const [data, setData] = useState<URL[] | null>(null);
+    const [data, setData] = useState<UrlWithCrawl[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
@@ -99,7 +101,7 @@ const Dashboard = () => {
         if (!data) return [];
 
         return data.filter(
-            (row: URL) =>
+            (row: UrlWithCrawl) =>
                 row.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.status.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,7 +109,7 @@ const Dashboard = () => {
     })();
 
     // Helper functions for rendering
-    const getStatusChip = (status: URL["status"]) => {
+    const getStatusChip = (status: UrlWithCrawl["status"]) => {
         const statusConfig = {
             queued: { color: "default" as const, label: "Queued" },
             running: { color: "primary" as const, label: "Running" },
@@ -235,7 +237,14 @@ const Dashboard = () => {
                                         page * rowsPerPage + rowsPerPage
                                     )
                                     .map((row) => (
-                                        <TableRow hover key={row.id}>
+                                        <TableRow
+                                            hover
+                                            key={row.id}
+                                            onClick={() =>
+                                                navigate(`/url/${row.id}`)
+                                            }
+                                            sx={{ cursor: "pointer" }}
+                                        >
                                             <TableCell>{row.url}</TableCell>
                                             <TableCell>
                                                 {row.title || "-"}
