@@ -8,6 +8,7 @@ import {
     Chip,
     Card,
     CardContent,
+    Tooltip,
 } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
 import { ApiCrawlResponse, ApiURL } from "../models/Url";
@@ -193,602 +194,722 @@ const UrlDetails = () => {
                     xs: "1fr",
                     sm: "1fr",
                     md: "1fr 1fr",
-                    lg: "2fr 1fr",
+                    lg: "1fr 1fr 1fr",
                 }}
-                gridTemplateRows={{ lg: "1fr" }}
                 gap={4}
                 sx={{
                     width: "100%",
                     alignItems: "stretch",
-                }}
-            >
-                {/* Column 1 - Basic Information */}
-                <Box
-                    sx={{
-                        minWidth: 0,
+                    "& > *": {
+                        height: "600px", // Fixed height for all tiles
                         display: "flex",
                         flexDirection: "column",
+                    },
+                }}
+            >
+                {/* Tile 1 - Basic Information */}
+                <Card
+                    elevation={3}
+                    sx={{
+                        borderRadius: 3,
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        flex: 1,
                     }}
                 >
-                    {/* Basic Info Card */}
-                    <Card
-                        elevation={3}
+                    <CardContent
                         sx={{
-                            borderRadius: 3,
-                            border: "1px solid",
-                            borderColor: "grey.200",
-                            width: "100%",
-                            overflow: "hidden",
-                            flex: 1,
+                            p: 3,
+                            height: "100%",
                             display: "flex",
                             flexDirection: "column",
                         }}
                     >
-                        <CardContent
+                        <Typography
+                            variant="h6"
+                            gutterBottom
                             sx={{
-                                p: 4,
+                                fontWeight: 600,
+                                color: "primary.main",
+                                mb: 3,
+                            }}
+                        >
+                            Basic Information
+                        </Typography>
+
+                        <Box
+                            display="flex"
+                            flexDirection="column"
+                            gap={2.5}
+                            sx={{ flex: 1 }}
+                        >
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    URL
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        wordBreak: "break-all",
+                                        backgroundColor: "grey.50",
+                                        p: 1.5,
+                                        borderRadius: 1,
+                                        fontFamily: "monospace",
+                                        fontSize: "0.8rem",
+                                    }}
+                                >
+                                    {data.url.url}
+                                </Typography>
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    Title
+                                </Typography>
+                                <Typography
+                                    variant="body1"
+                                    sx={{ fontWeight: 500 }}
+                                >
+                                    {data.results.title || "No title"}
+                                </Typography>
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    Status
+                                </Typography>
+                                <Box>{getStatusChip(data.url.status)}</Box>
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    HTML Version
+                                </Typography>
+                                <Typography
+                                    variant="body1"
+                                    sx={{ fontWeight: 500 }}
+                                >
+                                    {data.results.html_version || "Unknown"}
+                                </Typography>
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    Analyzed On
+                                </Typography>
+                                <Typography
+                                    variant="body1"
+                                    sx={{ fontWeight: 500 }}
+                                >
+                                    {formatDate(data.results.crawled_at)}
+                                </Typography>
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, mb: 1 }}
+                                >
+                                    Additional Information
+                                </Typography>
+                                <Box display="flex" gap={1} flexWrap="wrap">
+                                    <Chip
+                                        label={`Login Form: ${
+                                            data.results.has_login_form
+                                                ? "Yes"
+                                                : "No"
+                                        }`}
+                                        color={
+                                            data.results.has_login_form
+                                                ? "warning"
+                                                : "default"
+                                        }
+                                        size="small"
+                                    />
+                                    <Chip
+                                        label={`Total Links: ${
+                                            data.results.links?.length || 0
+                                        }`}
+                                        color="info"
+                                        size="small"
+                                    />
+                                </Box>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
+
+                {/* Tile 2 - Link Analysis */}
+                <Card
+                    elevation={3}
+                    sx={{
+                        borderRadius: 3,
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        flex: 1,
+                    }}
+                >
+                    <CardContent
+                        sx={{
+                            p: 3,
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            gutterBottom
+                            sx={{
+                                fontWeight: 600,
+                                color: "primary.main",
+                                mb: 3,
+                            }}
+                        >
+                            Link Analysis
+                        </Typography>
+
+                        {/* Link Statistics */}
+                        <Box
+                            sx={{
+                                mb: 3,
                                 flex: 1,
                                 display: "flex",
                                 flexDirection: "column",
                             }}
                         >
-                            <Typography
-                                variant="h5"
-                                gutterBottom
+                            <Box
                                 sx={{
-                                    fontWeight: 600,
-                                    color: "primary.main",
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(3, 1fr)",
+                                    gap: 2,
                                     mb: 3,
                                 }}
                             >
-                                Basic Information
-                            </Typography>
-
-                            <Box
-                                display="flex"
-                                flexDirection="column"
-                                gap={3}
-                                sx={{ flex: 1 }}
-                            >
-                                <Box>
+                                <Box sx={{ textAlign: "center" }}>
                                     <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        sx={{ fontWeight: 600, mb: 1 }}
+                                        variant="h4"
+                                        color="primary.main"
+                                        sx={{ fontWeight: 700, mb: 0.5 }}
                                     >
-                                        URL
+                                        {data.results.internal_links || 0}
                                     </Typography>
                                     <Typography
-                                        variant="body1"
+                                        variant="caption"
+                                        color="text.secondary"
                                         sx={{
-                                            wordBreak: "break-all",
-                                            backgroundColor: "grey.50",
-                                            p: 2,
-                                            borderRadius: 2,
-                                            fontFamily: "monospace",
-                                            fontSize: {
-                                                xs: "0.8rem",
-                                                sm: "0.875rem",
-                                            },
-                                            overflow: "hidden",
-                                            maxWidth: "100%",
+                                            fontWeight: 600,
+                                            textTransform: "uppercase",
+                                            letterSpacing: 1,
                                         }}
                                     >
-                                        {data.url.url}
+                                        Internal
                                     </Typography>
                                 </Box>
 
-                                <Box>
+                                <Box sx={{ textAlign: "center" }}>
                                     <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        sx={{ fontWeight: 600, mb: 1 }}
+                                        variant="h4"
+                                        color="info.main"
+                                        sx={{ fontWeight: 700, mb: 0.5 }}
                                     >
-                                        Title
+                                        {data.results.external_links || 0}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                            fontWeight: 600,
+                                            textTransform: "uppercase",
+                                            letterSpacing: 1,
+                                        }}
+                                    >
+                                        External
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{ textAlign: "center" }}>
+                                    <Typography
+                                        variant="h4"
+                                        color="error.main"
+                                        sx={{ fontWeight: 700, mb: 0.5 }}
+                                    >
+                                        {data.results.inaccessible_links || 0}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                            fontWeight: 600,
+                                            textTransform: "uppercase",
+                                            letterSpacing: 1,
+                                        }}
+                                    >
+                                        Broken
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {/* Visual Progress Bars */}
+                            <Box>
+                                {(() => {
+                                    const total =
+                                        (data.results.internal_links || 0) +
+                                        (data.results.external_links || 0) +
+                                        (data.results.inaccessible_links || 0);
+                                    const internalPercent =
+                                        total > 0
+                                            ? Math.round(
+                                                  ((data.results
+                                                      .internal_links || 0) /
+                                                      total) *
+                                                      100
+                                              )
+                                            : 0;
+                                    const externalPercent =
+                                        total > 0
+                                            ? Math.round(
+                                                  ((data.results
+                                                      .external_links || 0) /
+                                                      total) *
+                                                      100
+                                              )
+                                            : 0;
+                                    const brokenPercent =
+                                        total > 0
+                                            ? Math.round(
+                                                  ((data.results
+                                                      .inaccessible_links ||
+                                                      0) /
+                                                      total) *
+                                                      100
+                                              )
+                                            : 0;
+
+                                    return (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 2,
+                                            }}
+                                        >
+                                            {/* Internal Links Bar */}
+                                            <Box>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        mb: 0.5,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="primary.main"
+                                                        sx={{ fontWeight: 600 }}
+                                                    >
+                                                        Internal Links
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                    >
+                                                        {internalPercent}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: 8,
+                                                        backgroundColor:
+                                                            "grey.200",
+                                                        borderRadius: 4,
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: `${internalPercent}%`,
+                                                            height: "100%",
+                                                            backgroundColor:
+                                                                "primary.main",
+                                                            transition:
+                                                                "width 0.3s ease",
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+
+                                            {/* External Links Bar */}
+                                            <Box>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        mb: 0.5,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="info.main"
+                                                        sx={{ fontWeight: 600 }}
+                                                    >
+                                                        External Links
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                    >
+                                                        {externalPercent}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: 8,
+                                                        backgroundColor:
+                                                            "grey.200",
+                                                        borderRadius: 4,
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: `${externalPercent}%`,
+                                                            height: "100%",
+                                                            backgroundColor:
+                                                                "info.main",
+                                                            transition:
+                                                                "width 0.3s ease",
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+
+                                            {/* Broken Links Bar */}
+                                            <Box>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        mb: 0.5,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="error.main"
+                                                        sx={{ fontWeight: 600 }}
+                                                    >
+                                                        Broken Links
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                    >
+                                                        {brokenPercent}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: 8,
+                                                        backgroundColor:
+                                                            "grey.200",
+                                                        borderRadius: 4,
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: `${brokenPercent}%`,
+                                                            height: "100%",
+                                                            backgroundColor:
+                                                                "error.main",
+                                                            transition:
+                                                                "width 0.3s ease",
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    );
+                                })()}
+                            </Box>
+                        </Box>
+
+                        {/* Broken Links List */}
+                        {data.results.links &&
+                            data.results.links.some(
+                                (link) => !link.is_accessible
+                            ) && (
+                                <Box sx={{ flex: 1, minHeight: 0 }}>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            fontWeight: 600,
+                                            mb: 2,
+                                            color: "error.main",
+                                        }}
+                                    >
+                                        Broken Links
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            maxHeight: "200px",
+                                            overflowY: "auto",
+                                            pr: 1,
+                                        }}
+                                    >
+                                        {data.results.links
+                                            .filter(
+                                                (link) => !link.is_accessible
+                                            )
+                                            .slice(0, 10)
+                                            .map((link, index) => {
+                                                const truncatedUrl =
+                                                    link.url.length > 40
+                                                        ? `${link.url.substring(
+                                                              0,
+                                                              37
+                                                          )}...`
+                                                        : link.url;
+
+                                                return (
+                                                    <Box
+                                                        key={index}
+                                                        sx={{
+                                                            p: 1.5,
+                                                            mb: 1,
+                                                            backgroundColor:
+                                                                "grey.50",
+                                                            borderRadius: 1,
+                                                            border: "1px solid",
+                                                            borderColor:
+                                                                "grey.300",
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "grey.100",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            display="flex"
+                                                            alignItems="center"
+                                                            gap={1}
+                                                            justifyContent="space-between"
+                                                        >
+                                                            <Tooltip
+                                                                title={link.url}
+                                                                arrow
+                                                            >
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        fontFamily:
+                                                                            "monospace",
+                                                                        fontSize:
+                                                                            "0.75rem",
+                                                                        flex: 1,
+                                                                        cursor: "help",
+                                                                        minWidth: 0,
+                                                                        overflow:
+                                                                            "hidden",
+                                                                        textOverflow:
+                                                                            "ellipsis",
+                                                                        whiteSpace:
+                                                                            "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        truncatedUrl
+                                                                    }
+                                                                </Typography>
+                                                            </Tooltip>
+                                                            <Box
+                                                                display="flex"
+                                                                alignItems="center"
+                                                                gap={0.5}
+                                                            >
+                                                                <Chip
+                                                                    label={
+                                                                        link.status_code
+                                                                    }
+                                                                    color="error"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        fontSize:
+                                                                            "0.7rem",
+                                                                        minWidth:
+                                                                            "auto",
+                                                                        height: "18px",
+                                                                    }}
+                                                                />
+                                                                <Chip
+                                                                    label={
+                                                                        link.type
+                                                                    }
+                                                                    color="default"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        fontSize:
+                                                                            "0.7rem",
+                                                                        height: "18px",
+                                                                    }}
+                                                                />
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                );
+                                            })}
+                                        {data.results.links.filter(
+                                            (link) => !link.is_accessible
+                                        ).length > 10 && (
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{
+                                                    fontStyle: "italic",
+                                                    mt: 1,
+                                                    display: "block",
+                                                }}
+                                            >
+                                                ... and{" "}
+                                                {data.results.links.filter(
+                                                    (link) =>
+                                                        !link.is_accessible
+                                                ).length - 10}{" "}
+                                                more broken links
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            )}
+                    </CardContent>
+                </Card>
+
+                {/* Tile 3 - Header Tags */}
+                <Card
+                    elevation={3}
+                    sx={{
+                        borderRadius: 3,
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        flex: 1,
+                    }}
+                >
+                    <CardContent
+                        sx={{
+                            p: 3,
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            gutterBottom
+                            sx={{
+                                fontWeight: 600,
+                                color: "primary.main",
+                                mb: 3,
+                            }}
+                        >
+                            Header Tags
+                        </Typography>
+
+                        <Box
+                            display="grid"
+                            gridTemplateColumns="1fr"
+                            gap={2}
+                            sx={{ flex: 1 }}
+                        >
+                            {[
+                                {
+                                    label: "H1",
+                                    value: data.results.h1_count,
+                                    color: "primary",
+                                },
+                                {
+                                    label: "H2",
+                                    value: data.results.h2_count,
+                                    color: "secondary",
+                                },
+                                {
+                                    label: "H3",
+                                    value: data.results.h3_count,
+                                    color: "info",
+                                },
+                                {
+                                    label: "H4",
+                                    value: data.results.h4_count,
+                                    color: "success",
+                                },
+                                {
+                                    label: "H5",
+                                    value: data.results.h5_count,
+                                    color: "warning",
+                                },
+                                {
+                                    label: "H6",
+                                    value: data.results.h6_count,
+                                    color: "error",
+                                },
+                            ].map((header, index) => (
+                                <Box
+                                    key={index}
+                                    display="flex"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    sx={{
+                                        p: 2,
+                                        backgroundColor: "grey.50",
+                                        borderRadius: 2,
+                                        border: "1px solid",
+                                        borderColor: "grey.200",
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ fontWeight: 600 }}
+                                    >
+                                        {header.label} Tags
                                     </Typography>
                                     <Typography
                                         variant="h6"
-                                        sx={{ fontWeight: 500 }}
+                                        color={`${header.color}.main`}
+                                        sx={{ fontWeight: 700 }}
                                     >
-                                        {data.results.title || "No title"}
+                                        {header.value || 0}
                                     </Typography>
                                 </Box>
-
-                                <Box>
-                                    <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        sx={{ fontWeight: 600, mb: 1 }}
-                                    >
-                                        Status
-                                    </Typography>
-                                    <Box>{getStatusChip(data.url.status)}</Box>
-                                </Box>
-
-                                <Box display="flex" gap={4}>
-                                    <Box flex={1}>
-                                        <Typography
-                                            variant="subtitle2"
-                                            color="text.secondary"
-                                            sx={{ fontWeight: 600, mb: 1 }}
-                                        >
-                                            HTML Version
-                                        </Typography>
-                                        <Typography
-                                            variant="body1"
-                                            sx={{ fontWeight: 500 }}
-                                        >
-                                            {data.results.html_version ||
-                                                "Unknown"}
-                                        </Typography>
-                                    </Box>
-
-                                    <Box flex={1}>
-                                        <Typography
-                                            variant="subtitle2"
-                                            color="text.secondary"
-                                            sx={{ fontWeight: 600, mb: 1 }}
-                                        >
-                                            Analyzed On
-                                        </Typography>
-                                        <Typography
-                                            variant="body1"
-                                            sx={{ fontWeight: 500 }}
-                                        >
-                                            {formatDate(
-                                                data.results.crawled_at
-                                            )}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box>
-                                    <Typography
-                                        variant="subtitle2"
-                                        color="text.secondary"
-                                        sx={{ fontWeight: 600, mb: 1 }}
-                                    >
-                                        Additional Information
-                                    </Typography>
-                                    <Box display="flex" gap={2} flexWrap="wrap">
-                                        <Chip
-                                            label={`Login Form: ${
-                                                data.results.has_login_form
-                                                    ? "Yes"
-                                                    : "No"
-                                            }`}
-                                            color={
-                                                data.results.has_login_form
-                                                    ? "warning"
-                                                    : "default"
-                                            }
-                                            size="small"
-                                        />
-                                        <Chip
-                                            label={`Total Links: ${
-                                                data.results.links?.length || 0
-                                            }`}
-                                            color="info"
-                                            size="small"
-                                        />
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
-
-                {/* Column 2 - Combined Statistics */}
-                <Box
-                    sx={{
-                        minWidth: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                    }}
-                >
-                    <Card
-                        elevation={3}
-                        sx={{
-                            borderRadius: 3,
-                            border: "1px solid",
-                            borderColor: "grey.200",
-                            width: "100%",
-                            overflow: "hidden",
-                            flex: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <CardContent
-                            sx={{
-                                p: 4,
-                                flex: 1,
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                        >
-                            <Typography
-                                variant="h5"
-                                gutterBottom
-                                sx={{
-                                    fontWeight: 600,
-                                    color: "primary.main",
-                                    mb: 3,
-                                }}
-                            >
-                                Website Statistics
-                            </Typography>
-
-                            {/* Link Statistics Section */}
-                            <Box sx={{ mb: 4 }}>
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 600,
-                                        mb: 2,
-                                        color: "text.primary",
-                                    }}
-                                >
-                                    Link Analysis
-                                </Typography>
-
-                                {/* Stats Summary */}
-                                <Box
-                                    sx={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(3, 1fr)",
-                                        gap: 2,
-                                        mb: 3,
-                                    }}
-                                >
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                            variant="h4"
-                                            color="primary.main"
-                                            sx={{ fontWeight: 700, mb: 0.5 }}
-                                        >
-                                            {data.results.internal_links || 0}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{
-                                                fontWeight: 600,
-                                                textTransform: "uppercase",
-                                                letterSpacing: 1,
-                                            }}
-                                        >
-                                            Internal
-                                        </Typography>
-                                    </Box>
-
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                            variant="h4"
-                                            color="info.main"
-                                            sx={{ fontWeight: 700, mb: 0.5 }}
-                                        >
-                                            {data.results.external_links || 0}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{
-                                                fontWeight: 600,
-                                                textTransform: "uppercase",
-                                                letterSpacing: 1,
-                                            }}
-                                        >
-                                            External
-                                        </Typography>
-                                    </Box>
-
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                            variant="h4"
-                                            color="error.main"
-                                            sx={{ fontWeight: 700, mb: 0.5 }}
-                                        >
-                                            {data.results.inaccessible_links ||
-                                                0}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{
-                                                fontWeight: 600,
-                                                textTransform: "uppercase",
-                                                letterSpacing: 1,
-                                            }}
-                                        >
-                                            Broken
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                {/* Visual Progress Bars */}
-                                <Box>
-                                    {/* Calculate percentages */}
-                                    {(() => {
-                                        const total =
-                                            (data.results.internal_links || 0) +
-                                            (data.results.external_links || 0) +
-                                            (data.results.inaccessible_links ||
-                                                0);
-                                        const internalPercent =
-                                            total > 0
-                                                ? Math.round(
-                                                      ((data.results
-                                                          .internal_links ||
-                                                          0) /
-                                                          total) *
-                                                          100
-                                                  )
-                                                : 0;
-                                        const externalPercent =
-                                            total > 0
-                                                ? Math.round(
-                                                      ((data.results
-                                                          .external_links ||
-                                                          0) /
-                                                          total) *
-                                                          100
-                                                  )
-                                                : 0;
-                                        const brokenPercent =
-                                            total > 0
-                                                ? Math.round(
-                                                      ((data.results
-                                                          .inaccessible_links ||
-                                                          0) /
-                                                          total) *
-                                                          100
-                                                  )
-                                                : 0;
-
-                                        return (
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    gap: 2,
-                                                }}
-                                            >
-                                                {/* Internal Links Bar */}
-                                                <Box>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            justifyContent:
-                                                                "space-between",
-                                                            mb: 0.5,
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="primary.main"
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            Internal Links
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                        >
-                                                            {internalPercent}%
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box
-                                                        sx={{
-                                                            width: "100%",
-                                                            height: 8,
-                                                            backgroundColor:
-                                                                "grey.200",
-                                                            borderRadius: 4,
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        <Box
-                                                            sx={{
-                                                                width: `${internalPercent}%`,
-                                                                height: "100%",
-                                                                backgroundColor:
-                                                                    "primary.main",
-                                                                transition:
-                                                                    "width 0.3s ease",
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </Box>
-
-                                                {/* External Links Bar */}
-                                                <Box>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            justifyContent:
-                                                                "space-between",
-                                                            mb: 0.5,
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="info.main"
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            External Links
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                        >
-                                                            {externalPercent}%
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box
-                                                        sx={{
-                                                            width: "100%",
-                                                            height: 8,
-                                                            backgroundColor:
-                                                                "grey.200",
-                                                            borderRadius: 4,
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        <Box
-                                                            sx={{
-                                                                width: `${externalPercent}%`,
-                                                                height: "100%",
-                                                                backgroundColor:
-                                                                    "info.main",
-                                                                transition:
-                                                                    "width 0.3s ease",
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </Box>
-
-                                                {/* Broken Links Bar */}
-                                                <Box>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            justifyContent:
-                                                                "space-between",
-                                                            mb: 0.5,
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="error.main"
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            Broken Links
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                        >
-                                                            {brokenPercent}%
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box
-                                                        sx={{
-                                                            width: "100%",
-                                                            height: 8,
-                                                            backgroundColor:
-                                                                "grey.200",
-                                                            borderRadius: 4,
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        <Box
-                                                            sx={{
-                                                                width: `${brokenPercent}%`,
-                                                                height: "100%",
-                                                                backgroundColor:
-                                                                    "error.main",
-                                                                transition:
-                                                                    "width 0.3s ease",
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        );
-                                    })()}
-                                </Box>
-                            </Box>
-
-                            {/* Header Statistics Section */}
-                            <Box>
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 600,
-                                        mb: 2,
-                                        color: "text.primary",
-                                    }}
-                                >
-                                    Header Tags
-                                </Typography>
-
-                                <Box
-                                    display="grid"
-                                    gridTemplateColumns="repeat(2, 1fr)"
-                                    gap={2}
-                                >
-                                    {[
-                                        {
-                                            label: "H1",
-                                            value: data.results.h1_count,
-                                            color: "primary",
-                                        },
-                                        {
-                                            label: "H2",
-                                            value: data.results.h2_count,
-                                            color: "secondary",
-                                        },
-                                        {
-                                            label: "H3",
-                                            value: data.results.h3_count,
-                                            color: "info",
-                                        },
-                                        {
-                                            label: "H4",
-                                            value: data.results.h4_count,
-                                            color: "success",
-                                        },
-                                        {
-                                            label: "H5",
-                                            value: data.results.h5_count,
-                                            color: "warning",
-                                        },
-                                        {
-                                            label: "H6",
-                                            value: data.results.h6_count,
-                                            color: "error",
-                                        },
-                                    ].map((header, index) => (
-                                        <Box
-                                            key={index}
-                                            display="flex"
-                                            justifyContent="space-between"
-                                            alignItems="center"
-                                            sx={{
-                                                p: 2,
-                                                backgroundColor: "grey.50",
-                                                borderRadius: 2,
-                                                border: "1px solid",
-                                                borderColor: "grey.200",
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
-                                                sx={{ fontWeight: 600 }}
-                                            >
-                                                {header.label} Tags
-                                            </Typography>
-                                            <Typography
-                                                variant="h6"
-                                                color={`${header.color}.main`}
-                                                sx={{ fontWeight: 700 }}
-                                            >
-                                                {header.value || 0}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
+                            ))}
+                        </Box>
+                    </CardContent>
+                </Card>
             </Box>
         </Box>
     );
