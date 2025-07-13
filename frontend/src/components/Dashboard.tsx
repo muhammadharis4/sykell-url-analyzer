@@ -86,8 +86,8 @@ const Dashboard = () => {
 
     // Load data on component mount
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (data === null) fetchData();
+    }, [data]);
 
     // Handle refresh
     const handleRefresh = () => {

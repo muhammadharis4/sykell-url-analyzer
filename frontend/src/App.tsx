@@ -1,4 +1,6 @@
 import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import Dashboard from "./components/Dashboard";
 import "./App.css";
@@ -40,6 +42,17 @@ function App() {
                     <Dashboard />
                 </Box>
             </Box>
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
         </ThemeProvider>
     );
 }

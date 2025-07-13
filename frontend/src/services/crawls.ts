@@ -3,14 +3,34 @@
  * @returns {Promise<any>} The API response
  */
 export const getUrlsWithCrawls = async () => {
-    const response = await fetch("http://localhost:8080/api/urls/crawl", {
-        method: "GET",
-    });
-    const data = await response.json();
-    return {
-        isSuccess: response.ok,
-        data,
-    };
+    try {
+        const response = await fetch("http://localhost:8080/api/urls/crawl", {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            return {
+                isSuccess: false,
+                data: null,
+                error: `HTTP error! status: ${response.status}`,
+            };
+        }
+
+        const data = await response.json();
+        return {
+            isSuccess: true,
+            data,
+        };
+    } catch (error) {
+        return {
+            isSuccess: false,
+            data: null,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Network error occurred",
+        };
+    }
 };
 
 /**
@@ -19,12 +39,35 @@ export const getUrlsWithCrawls = async () => {
  * @returns {Promise<any>} The API response
  */
 export const crawlUrl = async (id: number | string) => {
-    const response = await fetch(`http://localhost:8080/api/urls/${id}/crawl`, {
-        method: "POST",
-    });
-    const data = await response.json();
-    return {
-        isSuccess: response.ok,
-        data,
-    };
+    try {
+        const response = await fetch(
+            `http://localhost:8080/api/urls/${id}/crawl`,
+            {
+                method: "POST",
+            }
+        );
+
+        if (!response.ok) {
+            return {
+                isSuccess: false,
+                data: null,
+                error: `HTTP error! status: ${response.status}`,
+            };
+        }
+
+        const data = await response.json();
+        return {
+            isSuccess: true,
+            data,
+        };
+    } catch (error) {
+        return {
+            isSuccess: false,
+            data: null,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Network error occurred",
+        };
+    }
 };
