@@ -76,10 +76,10 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 		return
 	}
 
-	// Return crawl results
+	// Return results (empty array if no results yet)
 	c.JSON(http.StatusOK, gin.H{
 		"url":     url,
-		"crawl": crawlResults,
+		"results": crawlResults,
 		"count":   len(crawlResults),
 	})
 }
