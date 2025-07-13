@@ -4,19 +4,42 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 )
 
 type CrawlController struct {
 	db *gorm.DB
 }
 
+// NewCrawlController creates a new instance of CrawlController
 func NewCrawlController(db *gorm.DB) *CrawlController {
 	return &CrawlController{
 		db: db,
 	}
+}
+
+// GetCrawelResults - GET /api/urls/crawls
+func (cc *CrawlController) GetCrawelResults(c *gin.Context) {
+	var urls []models.URL
+	if err := cc.db.Find(&urls).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve URLs",
+		})
+		return
+	}
+
+	var enrichedURLs []map[string]interface{}
+	for _, url := range urls {
+		enrichedURL := utils.EnrichURL(cc.db, url)
+		enrichedURLs = append(enrichedURLs, enrichedURL)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"urls": enrichedURLs,
+	})
 }
 
 // GetCrawlResults - GET /api/urls/:id/results
