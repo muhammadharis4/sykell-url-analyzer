@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/services"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/utils"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type URLController struct {
@@ -76,17 +77,16 @@ func (uc *URLController) AddURL(c *gin.Context) {
 // GetURLs - GET /api/urls
 func (uc *URLController) GetURLs(c *gin.Context) {
 	var urls []models.URL
-	
 	if err := uc.db.Order("created_at desc").Find(&urls).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve URLs",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URLs"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"urls": urls,
-	})
+	var enrichedURLs []map[string]interface{}
+	for _, url := range urls {
+		enrichedURLs = append(enrichedURLs, utils.EnrichURL(uc.db, url))
+	}
+	c.JSON(http.StatusOK, gin.H{"urls": enrichedURLs})
 }
 
 // GetURL - GET /api/urls/:id
@@ -102,18 +102,14 @@ func (uc *URLController) GetURL(c *gin.Context) {
 	var url models.URL
 	if err := uc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "URL not found",
-			})
+			c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve URL",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
 		return
 	}
 
-	c.JSON(http.StatusOK, url)
+	c.JSON(http.StatusOK, utils.EnrichURL(uc.db, url))
 }
 
 // DeleteURL - DELETE /api/urls/:id
