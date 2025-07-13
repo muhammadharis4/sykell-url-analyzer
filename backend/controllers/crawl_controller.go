@@ -68,7 +68,7 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	}
 
 	// Get crawl results for this URL
-	var crawlResults []models.CrawlResult
+	var crawlResults models.CrawlResult
 	if err := cc.db.Preload("Links").Where("url_id = ?", id).Find(&crawlResults).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to retrieve crawl results",
@@ -80,6 +80,5 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"url":     url,
 		"results": crawlResults,
-		"count":   len(crawlResults),
 	})
 }
