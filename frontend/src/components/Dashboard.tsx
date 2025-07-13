@@ -21,8 +21,9 @@ import {
 } from "@mui/material";
 import { Visibility, Refresh, Delete, Search } from "@mui/icons-material";
 import { URL } from "../models/Url";
-import { getUrls } from "../services/api";
+import { getUrlsWithCrawls } from "../services/crawls";
 import { SortOrder, TableColumn } from "../types/Table";
+import { toast } from "react-toastify";
 
 /**
  * Dashboard component to display and manage URLs
@@ -89,12 +90,12 @@ const Dashboard = () => {
     const fetchData = async () => {
         setLoading(true);
 
-        const response = await getUrls();
+        const response = await getUrlsWithCrawls();
 
         if (response.isSuccess) {
             setData(response.data.urls);
         } else {
-            console.error("Failed to fetch URLs:", response.status);
+            toast.error("Failed to fetch crawl data");
         }
 
         setLoading(false);
