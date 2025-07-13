@@ -17,16 +17,12 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 
 	// URL routes
 	urls := api.Group("/urls")
-
-	// crawl routes
-	crawls := api.Group("/crawls")
 	{
-		urls.POST("", urlController.AddURL)          // POST /api/urls
-		urls.GET("", urlController.GetURLs)          // GET /api/urls
-		urls.GET("/:id", urlController.GetURL)       // GET /api/urls/123
-		urls.DELETE("/:id", urlController.DeleteURL) // DELETE /api/urls/123
-
-		crawls.GET("/crawls", crawlController.GetCrawelResults)    // GET /api/crawls
-		crawls.GET("/:id/crawls", crawlController.GetCrawlResults) // GET /api/urls/123/crawls
+		urls.POST("", urlController.AddURL)                     // POST /api/urls
+		urls.GET("", urlController.GetURLs)                     // GET /api/urls
+		urls.GET("/:id", urlController.GetURL)                  // GET /api/urls/123
+		urls.DELETE("/:id", urlController.DeleteURL)            // DELETE /api/urls/123
+		urls.GET("/crawl", crawlController.GetCrawelResults)          // GET /api/crawls
+		urls.GET("/:id/crawl", crawlController.GetCrawlResults) // GET /api/urls/123/crawls
 	}
 }
