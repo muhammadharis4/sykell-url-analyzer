@@ -61,7 +61,11 @@ const columns: TableColumn[] = [
 /**
  * Dashboard component to display URLs
  */
-const Dashboard = () => {
+interface DashboardProps {
+    refreshTrigger?: number; // Optional prop to trigger refresh
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const navigate = useNavigate();
     // State for data - null represents data not fetched, array represents fetched data (empty or with items)
     const [data, setData] = useState<UrlWithCrawl[] | null>(null);
@@ -90,6 +94,13 @@ const Dashboard = () => {
     useEffect(() => {
         if (data === null) fetchData();
     }, [data]);
+
+    // Handle refresh trigger from parent component
+    useEffect(() => {
+        if (refreshTrigger && refreshTrigger > 0) {
+            fetchData();
+        }
+    }, [refreshTrigger]);
 
     // Handle refresh
     const handleRefresh = () => {

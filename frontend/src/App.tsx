@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -20,6 +21,12 @@ const theme = createTheme({
 });
 
 function App() {
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const handleUrlAdded = () => {
+        setRefreshTrigger((prev) => prev + 1);
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -31,7 +38,7 @@ function App() {
                         minHeight: "100vh",
                     }}
                 >
-                    <Header />
+                    <Header onUrlAdded={handleUrlAdded} />
                     <Box
                         component="main"
                         sx={{
@@ -43,7 +50,14 @@ function App() {
                         }}
                     >
                         <Routes>
-                            <Route path="/" element={<Dashboard />} />
+                            <Route
+                                path="/"
+                                element={
+                                    <Dashboard
+                                        refreshTrigger={refreshTrigger}
+                                    />
+                                }
+                            />
                             <Route path="/url/:id" element={<UrlDetails />} />
                         </Routes>
                     </Box>
