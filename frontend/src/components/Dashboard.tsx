@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     Paper,
     Table,
@@ -8,83 +8,65 @@ import {
     TableHead,
     TablePagination,
     TableRow,
-    TableSortLabel,
     Toolbar,
     Typography,
     TextField,
     Box,
     Chip,
     IconButton,
-    Checkbox,
-    Button,
     CircularProgress,
 } from "@mui/material";
-import { Visibility, Refresh, Delete, Search } from "@mui/icons-material";
+import { Refresh, Search } from "@mui/icons-material";
 import { URL } from "../models/Url";
 import { getUrlsWithCrawls } from "../services/crawls";
-import { SortOrder, TableColumn } from "../types/Table";
+import { TableColumn } from "../types/Table";
 import { toast } from "react-toastify";
 
 /**
- * Dashboard component to display and manage URLs
- * Fetches data from the API and provides sorting, filtering, and pagination
+ * Dashboard component to display URLs
+ * Fetches data from the API and provides basic filtering
  */
 const columns: TableColumn[] = [
-    { id: "url", label: "URL", minWidth: 200, sortable: true },
-    { id: "title", label: "Title", minWidth: 150, sortable: true },
-    {
-        id: "status",
-        label: "Status",
-        minWidth: 100,
-        align: "center",
-        sortable: true,
-    },
+    { id: "url", label: "URL", minWidth: 200 },
+    { id: "title", label: "Title", minWidth: 150 },
+    { id: "status", label: "Status", minWidth: 100, align: "center" },
     {
         id: "html_version",
         label: "HTML Version",
         minWidth: 100,
         align: "center",
-        sortable: true,
     },
     {
         id: "internal_links",
         label: "Internal Links",
         minWidth: 120,
         align: "right",
-        sortable: true,
     },
     {
         id: "external_links",
         label: "External Links",
         minWidth: 120,
         align: "right",
-        sortable: true,
     },
     {
         id: "broken_links",
         label: "Broken Links",
         minWidth: 120,
         align: "right",
-        sortable: true,
     },
-    { id: "created_at", label: "Created", minWidth: 120, sortable: true },
-    { id: "actions", label: "Actions", minWidth: 120, align: "center" },
+    { id: "created_at", label: "Created", minWidth: 120 },
 ];
 
 /**
- * Dashboard component to display and manage URLs
- * Fetches data from the API and provides sorting, filtering, and pagination
+ * Dashboard component to display URLs
  */
 const Dashboard = () => {
-    // State for data - will be populated from API call to http://localhost:8080/api/urls
-    const [data, setData] = useState<URL[]>([]);
+    // State for data - null represents data not fetched, array represents fetched data (empty or with items)
+    const [data, setData] = useState<URL[] | null>(null);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [orderBy, setOrderBy] = useState<string>("created_at");
-    const [order, setOrder] = useState<SortOrder>("desc");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selected, setSelected] = useState<number[]>([]);
 
     // Fetch data from API
     const fetchData = async () => {
@@ -96,6 +78,7 @@ const Dashboard = () => {
             setData(response.data.urls);
         } else {
             toast.error("Failed to fetch crawl data");
+            setData(null);
         }
 
         setLoading(false);
@@ -111,117 +94,17 @@ const Dashboard = () => {
         fetchData();
     };
 
-    // Sorting and filtering logic
-    const handleRequestSort = (property: string) => {
-        const isAsc = orderBy === property && order === "asc";
-        setOrder(isAsc ? "desc" : "asc");
-        setOrderBy(property);
-    };
+    // Filter data
+    const filteredData = (() => {
+        if (!data) return [];
 
-    // Handle select all click
-    const handleSelectAllClick = (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        if (event.target.checked) {
-            const newSelected = filteredData.map((n: URL) => n.id);
-            setSelected(newSelected);
-            return;
-        }
-        setSelected([]);
-    };
-
-    // Handle row click
-    const handleClick = (id: number) => {
-        const selectedIndex = selected.indexOf(id);
-        let newSelected: number[] = [];
-
-        if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selected, id);
-        } else if (selectedIndex === 0) {
-            newSelected = newSelected.concat(selected.slice(1));
-        } else if (selectedIndex === selected.length - 1) {
-            newSelected = newSelected.concat(selected.slice(0, -1));
-        } else if (selectedIndex > 0) {
-            newSelected = newSelected.concat(
-                selected.slice(0, selectedIndex),
-                selected.slice(selectedIndex + 1)
-            );
-        }
-        setSelected(newSelected);
-    };
-
-    // Filter and sort data
-    const filteredData = useMemo(() => {
         return data.filter(
             (row: URL) =>
                 row.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.status.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [searchTerm, data]);
-
-    // Sort filtered data
-    const sortedData = useMemo(() => {
-        return [...filteredData].sort((a, b) => {
-            let aValue: string | number = "";
-            let bValue: string | number = "";
-
-            // Handle specific result properties
-            switch (orderBy) {
-                case "title":
-                    aValue = a.title || "";
-                    bValue = b.title || "";
-                    break;
-                case "html_version":
-                    aValue = a.html_version || "";
-                    bValue = b.html_version || "";
-                    break;
-                case "internal_links":
-                    aValue = a.internal_links || 0;
-                    bValue = b.internal_links || 0;
-                    break;
-                case "external_links":
-                    aValue = a.external_links || 0;
-                    bValue = b.external_links || 0;
-                    break;
-                case "broken_links":
-                    aValue = a.broken_links || 0;
-                    bValue = b.broken_links || 0;
-                    break;
-                default:
-                    // Handle direct URL properties
-                    aValue =
-                        (a as unknown as Record<string, string | number>)[
-                            orderBy
-                        ] || "";
-                    bValue =
-                        (b as unknown as Record<string, string | number>)[
-                            orderBy
-                        ] || "";
-            }
-
-            if (typeof aValue === "string" && typeof bValue === "string") {
-                aValue = aValue.toLowerCase();
-                bValue = bValue.toLowerCase();
-            }
-
-            if (bValue < aValue) {
-                return order === "desc" ? -1 : 1;
-            }
-            if (bValue > aValue) {
-                return order === "desc" ? 1 : -1;
-            }
-            return 0;
-        });
-    }, [filteredData, order, orderBy]);
-
-    // Paginate sorted data
-    const paginatedData = useMemo(() => {
-        return sortedData.slice(
-            page * rowsPerPage,
-            page * rowsPerPage + rowsPerPage
-        );
-    }, [sortedData, page, rowsPerPage]);
+    })();
 
     // Helper functions for rendering
     const getStatusChip = (status: URL["status"]) => {
@@ -241,17 +124,30 @@ const Dashboard = () => {
         return new Date(dateString).toLocaleDateString();
     };
 
-    // Check if a row is selected
-    const isSelected = (id: number) => selected.indexOf(id) !== -1;
-    const numSelected = selected.length;
-    const rowCount = filteredData.length;
+    // Determine what to show based on data state
+    const getDisplayContent = () => {
+        if (data === null && !loading) {
+            return "Data not loaded. Click refresh to load.";
+        }
+        if (loading) {
+            return "Loading URLs...";
+        }
+        if (data && data.length === 0) {
+            return "No URLs have been added yet. Add a URL to start analyzing.";
+        }
+        if (filteredData.length === 0 && data && data.length > 0) {
+            return "No URLs match your search criteria.";
+        }
+        return null; // Show table
+    };
+
+    const displayMessage = getDisplayContent();
 
     return (
-        <Box sx={{ width: "100%", height: "100%" }}>
+        <Box sx={{ width: "100%" }}>
             <Paper
                 sx={{
                     width: "100%",
-                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
                 }}
@@ -264,44 +160,13 @@ const Dashboard = () => {
                     >
                         URL Analysis Dashboard
                     </Typography>
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                        <IconButton
-                            onClick={handleRefresh}
-                            disabled={loading}
-                            title="Refresh"
-                        >
-                            <Refresh />
-                        </IconButton>
-                        {numSelected > 0 && (
-                            <>
-                                <Button
-                                    size="small"
-                                    startIcon={<Refresh />}
-                                    onClick={() =>
-                                        console.log(
-                                            "Re-analyze not implemented yet"
-                                        )
-                                    }
-                                    disabled
-                                >
-                                    Re-analyze ({numSelected})
-                                </Button>
-                                <Button
-                                    size="small"
-                                    color="error"
-                                    startIcon={<Delete />}
-                                    onClick={() =>
-                                        console.log(
-                                            "Delete not implemented yet"
-                                        )
-                                    }
-                                    disabled
-                                >
-                                    Delete ({numSelected})
-                                </Button>
-                            </>
-                        )}
-                    </Box>
+                    <IconButton
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        title="Refresh"
+                    >
+                        <Refresh />
+                    </IconButton>
                 </Toolbar>
 
                 <Box sx={{ p: 2, pb: 0 }}>
@@ -322,90 +187,55 @@ const Dashboard = () => {
                     />
                 </Box>
 
-                <TableContainer sx={{ flexGrow: 1, overflow: "auto" }}>
-                    <Table stickyHeader sx={{ height: "100%" }}>
+                <TableContainer>
+                    <Table stickyHeader>
                         <TableHead>
                             <TableRow>
-                                <TableCell padding="checkbox">
-                                    <Checkbox
-                                        color="primary"
-                                        indeterminate={
-                                            numSelected > 0 &&
-                                            numSelected < rowCount
-                                        }
-                                        checked={
-                                            rowCount > 0 &&
-                                            numSelected === rowCount
-                                        }
-                                        onChange={handleSelectAllClick}
-                                        disabled={loading}
-                                    />
-                                </TableCell>
                                 {columns.map((column) => (
                                     <TableCell
                                         key={column.id}
                                         align={column.align}
                                         style={{ minWidth: column.minWidth }}
                                     >
-                                        {column.sortable ? (
-                                            <TableSortLabel
-                                                active={orderBy === column.id}
-                                                direction={
-                                                    orderBy === column.id
-                                                        ? order
-                                                        : "asc"
-                                                }
-                                                onClick={() =>
-                                                    handleRequestSort(
-                                                        column.id as keyof URL
-                                                    )
-                                                }
-                                                disabled={loading}
-                                            >
-                                                {column.label}
-                                            </TableSortLabel>
-                                        ) : (
-                                            column.label
-                                        )}
+                                        {column.label}
                                     </TableCell>
                                 ))}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {loading ? (
-                                <TableRow style={{ height: 53 * rowsPerPage }}>
+                            {displayMessage ? (
+                                <TableRow>
                                     <TableCell
-                                        colSpan={columns.length + 1}
+                                        colSpan={columns.length}
                                         align="center"
                                         sx={{ py: 8 }}
                                     >
-                                        <CircularProgress />
+                                        {loading && (
+                                            <CircularProgress sx={{ mb: 2 }} />
+                                        )}
                                         <Typography
                                             variant="body2"
-                                            sx={{ mt: 2 }}
+                                            sx={{
+                                                color: loading
+                                                    ? "text.primary"
+                                                    : "text.secondary",
+                                                fontStyle: loading
+                                                    ? "normal"
+                                                    : "italic",
+                                            }}
                                         >
-                                            Loading URLs...
+                                            {displayMessage}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
-                            ) : paginatedData.length > 0 ? (
-                                paginatedData.map((row) => {
-                                    const isItemSelected = isSelected(row.id);
-                                    return (
-                                        <TableRow
-                                            hover
-                                            key={row.id}
-                                            selected={isItemSelected}
-                                        >
-                                            <TableCell padding="checkbox">
-                                                <Checkbox
-                                                    color="primary"
-                                                    checked={isItemSelected}
-                                                    onChange={() =>
-                                                        handleClick(row.id)
-                                                    }
-                                                />
-                                            </TableCell>
+                            ) : (
+                                filteredData
+                                    .slice(
+                                        page * rowsPerPage,
+                                        page * rowsPerPage + rowsPerPage
+                                    )
+                                    .map((row) => (
+                                        <TableRow hover key={row.id}>
                                             <TableCell>{row.url}</TableCell>
                                             <TableCell>
                                                 {row.title || "-"}
@@ -428,64 +258,8 @@ const Dashboard = () => {
                                             <TableCell>
                                                 {formatDate(row.created_at)}
                                             </TableCell>
-                                            <TableCell align="center">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        console.log(
-                                                            "View details",
-                                                            row.id
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        row.status !==
-                                                        "completed"
-                                                    }
-                                                >
-                                                    <Visibility />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        console.log(
-                                                            "Re-analyze not implemented yet"
-                                                        )
-                                                    }
-                                                    disabled
-                                                >
-                                                    <Refresh />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        console.log(
-                                                            "Delete not implemented yet"
-                                                        )
-                                                    }
-                                                    disabled
-                                                >
-                                                    <Delete />
-                                                </IconButton>
-                                            </TableCell>
                                         </TableRow>
-                                    );
-                                })
-                            ) : (
-                                <TableRow style={{ height: 53 * rowsPerPage }}>
-                                    <TableCell
-                                        colSpan={columns.length + 1}
-                                        align="center"
-                                        sx={{
-                                            py: 8,
-                                            color: "text.secondary",
-                                            fontStyle: "italic",
-                                        }}
-                                    >
-                                        {data.length === 0
-                                            ? "No URLs have been added yet. Add a URL to start analyzing."
-                                            : "No URLs match your search criteria."}
-                                    </TableCell>
-                                </TableRow>
+                                    ))
                             )}
                         </TableBody>
                     </Table>
