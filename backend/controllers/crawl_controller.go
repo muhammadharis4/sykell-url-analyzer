@@ -42,7 +42,7 @@ func (cc *CrawlController) GetCrawelResults(c *gin.Context) {
 	})
 }
 
-// GetCrawlResults - GET /api/urls/:id/results
+// GetCrawlResults - GET /api/urls/:id/crawl
 func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -79,7 +79,7 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 	// Return results (empty array if no results yet)
 	c.JSON(http.StatusOK, gin.H{
 		"url":     url,
-		"results": crawlResults,
+		"crawl": crawlResults,
 		"count":   len(crawlResults),
 	})
 }
