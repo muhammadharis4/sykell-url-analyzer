@@ -76,7 +76,7 @@ func (cc *CrawlController) GetCrawlResults(c *gin.Context) {
 		return
 	}
 
-	// Return results (empty array if no results yet)
+	// Return crawl results
 	c.JSON(http.StatusOK, gin.H{
 		"url":     url,
 		"crawl": crawlResults,
