@@ -11,9 +11,14 @@ import {
     IconButton,
 } from "@mui/material";
 import { ArrowBack, Refresh } from "@mui/icons-material";
-import { ApiCrawlResponse, ApiCrawlResult, ApiURL } from "../models/Url";
+import { ApiCrawlResult, ApiURL } from "../models/Url";
 import { toast } from "react-toastify";
+import { crawlUrl } from "../services/crawls";
 
+/**
+ * Component to display detailed analysis of a specific URL.
+ * @returns
+ */
 const UrlDetails = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -24,51 +29,15 @@ const UrlDetails = () => {
     // Fetch function - wrapped in useCallback to fix dependency issue
     const fetchUrlDetails = useCallback(async () => {
         setLoading(true);
-        try {
-            // TODO: Replace with actual API call
-            // const response = await fetch(`http://localhost:8080/api/urls/${id}/crawl-results`);
-            // const data: URLAnalysisResponse = await response.json();
-
-            // Mock data for now based on the actual API structure
-            const mockApiResponse: ApiCrawlResponse = {
-                count: 1,
-                results: [
-                    {
-                        id: 2,
-                        url_id: 3,
-                        title: "Google",
-                        html_version: "HTML5",
-                        h1_count: 0,
-                        h2_count: 0,
-                        h3_count: 0,
-                        h4_count: 0,
-                        h5_count: 0,
-                        h6_count: 0,
-                        internal_links: 9,
-                        external_links: 9,
-                        inaccessible_links: 0,
-                        has_login_form: false,
-                        crawled_at: "2025-07-13T00:26:01.93+02:00",
-                        links: [],
-                    },
-                ],
-                url: {
-                    id: 3,
-                    url: "https://www.google.com",
-                    status: "completed",
-                    created_at: "2025-07-13T00:26:01.145+02:00",
-                    updated_at: "2025-07-13T00:26:12.828+02:00",
-                },
-            };
-
-            setUrlData(mockApiResponse.url);
-            setCrawlData(mockApiResponse.results[0] || null);
-        } catch {
-            toast.error("Failed to fetch URL details");
-        } finally {
-            setLoading(false);
+        const crawlResponse = await crawlUrl(id ? parseInt(id, 10) : 0);
+        if (crawlResponse.isSuccess) {
+            setCrawlData(crawlResponse.data?.result);
+            setUrlData(crawlResponse.data);
+        } else {
+            toast.error("Failed to fetch crawl data");
         }
-    }, []);
+        setLoading(false);
+    }, [id]);
 
     useEffect(() => {
         if (id) {
