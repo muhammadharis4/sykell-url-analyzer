@@ -18,11 +18,11 @@ import {
     Checkbox,
     Button,
     CircularProgress,
-    Alert,
 } from "@mui/material";
 import { Visibility, Refresh, Delete, Search } from "@mui/icons-material";
-import { URL, SortOrder, TableColumn } from "../types";
+import { URL } from "../models/Url";
 import { getUrls } from "../services/api";
+import { SortOrder, TableColumn } from "../types/Table";
 
 /**
  * Dashboard component to display and manage URLs
@@ -39,28 +39,28 @@ const columns: TableColumn[] = [
         sortable: true,
     },
     {
-        id: "htmlVersion",
+        id: "html_version",
         label: "HTML Version",
         minWidth: 100,
         align: "center",
         sortable: true,
     },
     {
-        id: "internalLinksCount",
+        id: "internal_links",
         label: "Internal Links",
         minWidth: 120,
         align: "right",
         sortable: true,
     },
     {
-        id: "externalLinksCount",
+        id: "external_links",
         label: "External Links",
         minWidth: 120,
         align: "right",
         sortable: true,
     },
     {
-        id: "inaccessibleLinksCount",
+        id: "broken_links",
         label: "Broken Links",
         minWidth: 120,
         align: "right",
@@ -78,7 +78,6 @@ const Dashboard = () => {
     // State for data - will be populated from API call to http://localhost:8080/api/urls
     const [data, setData] = useState<URL[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [orderBy, setOrderBy] = useState<string>("created_at");
@@ -89,14 +88,13 @@ const Dashboard = () => {
     // Fetch data from API
     const fetchData = async () => {
         setLoading(true);
-        setError(null);
 
         const response = await getUrls();
 
         if (response.isSuccess) {
             setData(response.data.urls);
         } else {
-            setError(`Failed to fetch URLs: ${response.status}`);
+            console.error("Failed to fetch URLs:", response.status);
         }
 
         setLoading(false);
@@ -156,9 +154,7 @@ const Dashboard = () => {
         return data.filter(
             (row: URL) =>
                 row.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                row.result?.title
-                    ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase()) ||
+                row.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.status.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm, data]);
@@ -172,24 +168,24 @@ const Dashboard = () => {
             // Handle specific result properties
             switch (orderBy) {
                 case "title":
-                    aValue = a.result?.title || "";
-                    bValue = b.result?.title || "";
+                    aValue = a.title || "";
+                    bValue = b.title || "";
                     break;
-                case "htmlVersion":
-                    aValue = a.result?.htmlVersion || "";
-                    bValue = b.result?.htmlVersion || "";
+                case "html_version":
+                    aValue = a.html_version || "";
+                    bValue = b.html_version || "";
                     break;
-                case "internalLinksCount":
-                    aValue = a.result?.internalLinksCount || 0;
-                    bValue = b.result?.internalLinksCount || 0;
+                case "internal_links":
+                    aValue = a.internal_links || 0;
+                    bValue = b.internal_links || 0;
                     break;
-                case "externalLinksCount":
-                    aValue = a.result?.externalLinksCount || 0;
-                    bValue = b.result?.externalLinksCount || 0;
+                case "external_links":
+                    aValue = a.external_links || 0;
+                    bValue = b.external_links || 0;
                     break;
-                case "inaccessibleLinksCount":
-                    aValue = a.result?.inaccessibleLinksCount || 0;
-                    bValue = b.result?.inaccessibleLinksCount || 0;
+                case "broken_links":
+                    aValue = a.broken_links || 0;
+                    bValue = b.broken_links || 0;
                     break;
                 default:
                     // Handle direct URL properties
@@ -251,16 +247,6 @@ const Dashboard = () => {
 
     return (
         <Box sx={{ width: "100%", height: "100%" }}>
-            {error && (
-                <Alert
-                    severity="error"
-                    sx={{ mb: 2 }}
-                    onClose={() => setError(null)}
-                >
-                    {error}
-                </Alert>
-            )}
-
             <Paper
                 sx={{
                     width: "100%",
@@ -421,26 +407,22 @@ const Dashboard = () => {
                                             </TableCell>
                                             <TableCell>{row.url}</TableCell>
                                             <TableCell>
-                                                {row.result?.title || "-"}
+                                                {row.title || "-"}
                                             </TableCell>
                                             <TableCell align="center">
                                                 {getStatusChip(row.status)}
                                             </TableCell>
                                             <TableCell align="center">
-                                                {row.result?.htmlVersion || "-"}
+                                                {row.html_version || "-"}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {row.result
-                                                    ?.internalLinksCount || "-"}
+                                                {row.internal_links || "-"}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {row.result
-                                                    ?.externalLinksCount || "-"}
+                                                {row.external_links || "-"}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {row.result
-                                                    ?.inaccessibleLinksCount ||
-                                                    "-"}
+                                                {row.broken_links || "-"}
                                             </TableCell>
                                             <TableCell>
                                                 {formatDate(row.created_at)}
