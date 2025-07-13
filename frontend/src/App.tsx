@@ -1,8 +1,10 @@
 import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import Dashboard from "./components/Dashboard";
+import UrlDetails from "./components/UrlDetails";
 import "./App.css";
 
 const theme = createTheme({
@@ -21,38 +23,43 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: "100vh",
-                }}
-            >
-                <Header />
+            <Router>
                 <Box
-                    component="main"
                     sx={{
-                        flexGrow: 1,
-                        p: 3,
                         display: "flex",
                         flexDirection: "column",
-                        minHeight: 0,
+                        minHeight: "100vh",
                     }}
                 >
-                    <Dashboard />
+                    <Header />
+                    <Box
+                        component="main"
+                        sx={{
+                            flexGrow: 1,
+                            p: 3,
+                            display: "flex",
+                            flexDirection: "column",
+                            minHeight: 0,
+                        }}
+                    >
+                        <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/url/:id" element={<UrlDetails />} />
+                        </Routes>
+                    </Box>
                 </Box>
-            </Box>
-            <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
+                <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                />
+            </Router>
         </ThemeProvider>
     );
 }
