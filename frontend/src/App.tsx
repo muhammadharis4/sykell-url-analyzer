@@ -1,5 +1,6 @@
 import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
 import Header from "./components/Header";
+import Dashboard from "./components/Dashboard";
 import "./App.css";
 
 const theme = createTheme({
@@ -26,12 +27,17 @@ function App() {
                 }}
             >
                 <Header />
-                <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                    <h1>Welcome to Sykell URL Analyzer</h1>
-                    <p>
-                        Analyze website URLs and get detailed insights about
-                        their structure and content.
-                    </p>
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        p: 3,
+                        display: "flex",
+                        flexDirection: "column",
+                        minHeight: 0,
+                    }}
+                >
+                    <Dashboard />
                 </Box>
             </Box>
         </ThemeProvider>
