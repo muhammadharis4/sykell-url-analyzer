@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Paper,
@@ -74,6 +74,22 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
+    // Polling state
+    const [isPolling, setIsPolling] = useState(false);
+    const pollingIntervalRef = useRef<number | null>(null);
+
+    // Check if there are any URLs in "running" status
+    const hasRunningUrls =
+        data?.some((url) => url.status === "running") || false;
+
+    // Fetch data from API (silent version for polling)
+    const fetchDataSilent = async () => {
+        const response = await getUrlsWithCrawls();
+        if (response.isSuccess) {
+            setData(response.data.urls);
+        }
+    };
+
     // Fetch data from API
     const fetchData = async () => {
         setLoading(true);
@@ -101,6 +117,34 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
             fetchData();
         }
     }, [refreshTrigger]);
+
+    // Polling effect for running URLs
+    useEffect(() => {
+        // Start polling if there are running URLs and not already polling
+        if (hasRunningUrls && !isPolling) {
+            setIsPolling(true);
+            pollingIntervalRef.current = window.setInterval(() => {
+                fetchDataSilent();
+            }, 3000); // Poll every 3 seconds
+        }
+
+        // Stop polling if no running URLs or component unmounts
+        if (!hasRunningUrls && isPolling) {
+            setIsPolling(false);
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        };
+    }, [hasRunningUrls, isPolling]);
 
     // Handle refresh
     const handleRefresh = () => {
@@ -173,6 +217,23 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                     >
                         URL Analysis Dashboard
                     </Typography>
+
+                    {/* Polling indicator */}
+                    {isPolling && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mr: 2,
+                            }}
+                        >
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                            <Typography variant="caption" color="primary">
+                                Auto-updating...
+                            </Typography>
+                        </Box>
+                    )}
+
                     <IconButton
                         onClick={handleRefresh}
                         disabled={loading}

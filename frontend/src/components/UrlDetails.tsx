@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
     Typography,
@@ -24,6 +24,9 @@ const UrlDetails = () => {
     const [data, setData] = useState<ApiCrawlResponse | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Polling state
+    const pollingIntervalRef = useRef<number | null>(null);
+
     // Fetch function - wrapped in useCallback to fix dependency issue
     const fetchUrlDetails = useCallback(async () => {
         setLoading(true);
@@ -40,11 +43,45 @@ const UrlDetails = () => {
         setLoading(false);
     }, [id]);
 
+    // Silent fetch for polling (doesn't show loading state)
+    const fetchUrlDetailsSilent = useCallback(async () => {
+        if (id) {
+            const crawlResponse = await crawlUrl(id);
+            if (crawlResponse.isSuccess) {
+                setData(crawlResponse.data);
+            }
+        }
+    }, [id]);
+
     useEffect(() => {
         if (id) {
             fetchUrlDetails();
         }
     }, [id, fetchUrlDetails]);
+
+    // Polling effect for running status
+    useEffect(() => {
+        const isRunning = data?.url.status === "running";
+
+        if (isRunning && !pollingIntervalRef.current) {
+            // Start polling every 3 seconds for running status
+            pollingIntervalRef.current = window.setInterval(() => {
+                fetchUrlDetailsSilent();
+            }, 3000);
+        } else if (!isRunning && pollingIntervalRef.current) {
+            // Stop polling when status is no longer running
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        };
+    }, [data?.url.status, fetchUrlDetailsSilent]);
 
     const getStatusChip = (status: ApiURL["status"]) => {
         const statusConfig = {
@@ -171,7 +208,13 @@ const UrlDetails = () => {
                 </Typography>
                 <Button
                     variant="contained"
-                    startIcon={<Refresh />}
+                    startIcon={
+                        data?.url.status === "running" ? (
+                            <CircularProgress size={16} />
+                        ) : (
+                            <Refresh />
+                        )
+                    }
                     onClick={() => {
                         fetchUrlDetails();
                         toast.info("Re-analyzing URL...");
@@ -183,7 +226,9 @@ const UrlDetails = () => {
                         px: 3,
                     }}
                 >
-                    Re-analyze URL
+                    {data?.url.status === "running"
+                        ? "Auto-updating..."
+                        : "Re-analyze URL"}
                 </Button>
             </Box>
 
