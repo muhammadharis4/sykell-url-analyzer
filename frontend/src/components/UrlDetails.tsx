@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
     Typography,
     Box,
@@ -8,10 +8,9 @@ import {
     Chip,
     Card,
     CardContent,
-    IconButton,
 } from "@mui/material";
-import { ArrowBack, Refresh } from "@mui/icons-material";
-import { ApiCrawlResult, ApiURL } from "../models/Url";
+import { Refresh } from "@mui/icons-material";
+import { ApiCrawlResponse, ApiURL } from "../models/Url";
 import { toast } from "react-toastify";
 import { crawlUrl } from "../services/crawls";
 
@@ -21,20 +20,21 @@ import { crawlUrl } from "../services/crawls";
  */
 const UrlDetails = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const [urlData, setUrlData] = useState<ApiURL | null>(null);
-    const [crawlData, setCrawlData] = useState<ApiCrawlResult | null>(null);
+    const [data, setData] = useState<ApiCrawlResponse | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Fetch function - wrapped in useCallback to fix dependency issue
     const fetchUrlDetails = useCallback(async () => {
         setLoading(true);
-        const crawlResponse = await crawlUrl(id ? parseInt(id, 10) : 0);
-        if (crawlResponse.isSuccess) {
-            setCrawlData(crawlResponse.data?.result);
-            setUrlData(crawlResponse.data);
+        if (id) {
+            const crawlResponse = await crawlUrl(id);
+            if (crawlResponse.isSuccess) {
+                setData(crawlResponse.data);
+            } else {
+                toast.error("Failed to fetch crawl data");
+            }
         } else {
-            toast.error("Failed to fetch crawl data");
+            toast.error("URL ID is missing");
         }
         setLoading(false);
     }, [id]);
@@ -111,7 +111,7 @@ const UrlDetails = () => {
         );
     }
 
-    if (!urlData || !crawlData) {
+    if (!data) {
         return (
             <Box
                 textAlign="center"
@@ -128,24 +128,6 @@ const UrlDetails = () => {
                 >
                     URL not found
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    The requested URL analysis could not be found.
-                </Typography>
-                <Button
-                    variant="contained"
-                    size="large"
-                    onClick={() => navigate("/")}
-                    sx={{
-                        mt: 2,
-                        borderRadius: 2,
-                        textTransform: "none",
-                        px: 4,
-                        py: 1.5,
-                        fontWeight: 600,
-                    }}
-                >
-                    Back to Dashboard
-                </Button>
             </Box>
         );
     }
@@ -173,18 +155,6 @@ const UrlDetails = () => {
                     gap: 2,
                 }}
             >
-                <IconButton
-                    onClick={() => navigate("/")}
-                    sx={{
-                        mr: 2,
-                        "&:hover": {
-                            backgroundColor: "primary.light",
-                            color: "white",
-                        },
-                    }}
-                >
-                    <ArrowBack />
-                </IconButton>
                 <Typography
                     variant="h4"
                     component="h1"
@@ -304,7 +274,7 @@ const UrlDetails = () => {
                                             maxWidth: "100%",
                                         }}
                                     >
-                                        {urlData.url}
+                                        {data.url.url}
                                     </Typography>
                                 </Box>
 
@@ -320,7 +290,7 @@ const UrlDetails = () => {
                                         variant="h6"
                                         sx={{ fontWeight: 500 }}
                                     >
-                                        {crawlData.title || "No title"}
+                                        {data.results.title || "No title"}
                                     </Typography>
                                 </Box>
 
@@ -332,7 +302,7 @@ const UrlDetails = () => {
                                     >
                                         Status
                                     </Typography>
-                                    <Box>{getStatusChip(urlData.status)}</Box>
+                                    <Box>{getStatusChip(data.url.status)}</Box>
                                 </Box>
 
                                 <Box display="flex" gap={4}>
@@ -348,7 +318,7 @@ const UrlDetails = () => {
                                             variant="body1"
                                             sx={{ fontWeight: 500 }}
                                         >
-                                            {crawlData.html_version ||
+                                            {data.results.html_version ||
                                                 "Unknown"}
                                         </Typography>
                                     </Box>
@@ -365,7 +335,9 @@ const UrlDetails = () => {
                                             variant="body1"
                                             sx={{ fontWeight: 500 }}
                                         >
-                                            {formatDate(crawlData.crawled_at)}
+                                            {formatDate(
+                                                data.results.crawled_at
+                                            )}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -381,12 +353,12 @@ const UrlDetails = () => {
                                     <Box display="flex" gap={2} flexWrap="wrap">
                                         <Chip
                                             label={`Login Form: ${
-                                                crawlData.has_login_form
+                                                data.results.has_login_form
                                                     ? "Yes"
                                                     : "No"
                                             }`}
                                             color={
-                                                crawlData.has_login_form
+                                                data.results.has_login_form
                                                     ? "warning"
                                                     : "default"
                                             }
@@ -394,7 +366,7 @@ const UrlDetails = () => {
                                         />
                                         <Chip
                                             label={`Total Links: ${
-                                                crawlData.links?.length || 0
+                                                data.results.links?.length || 0
                                             }`}
                                             color="info"
                                             size="small"
@@ -475,7 +447,7 @@ const UrlDetails = () => {
                                             color="primary.main"
                                             sx={{ fontWeight: 700, mb: 0.5 }}
                                         >
-                                            {crawlData.internal_links || 0}
+                                            {data.results.internal_links || 0}
                                         </Typography>
                                         <Typography
                                             variant="caption"
@@ -496,7 +468,7 @@ const UrlDetails = () => {
                                             color="info.main"
                                             sx={{ fontWeight: 700, mb: 0.5 }}
                                         >
-                                            {crawlData.external_links || 0}
+                                            {data.results.external_links || 0}
                                         </Typography>
                                         <Typography
                                             variant="caption"
@@ -517,7 +489,8 @@ const UrlDetails = () => {
                                             color="error.main"
                                             sx={{ fontWeight: 700, mb: 0.5 }}
                                         >
-                                            {crawlData.inaccessible_links || 0}
+                                            {data.results.inaccessible_links ||
+                                                0}
                                         </Typography>
                                         <Typography
                                             variant="caption"
@@ -538,13 +511,15 @@ const UrlDetails = () => {
                                     {/* Calculate percentages */}
                                     {(() => {
                                         const total =
-                                            (crawlData.internal_links || 0) +
-                                            (crawlData.external_links || 0) +
-                                            (crawlData.inaccessible_links || 0);
+                                            (data.results.internal_links || 0) +
+                                            (data.results.external_links || 0) +
+                                            (data.results.inaccessible_links ||
+                                                0);
                                         const internalPercent =
                                             total > 0
                                                 ? Math.round(
-                                                      ((crawlData.internal_links ||
+                                                      ((data.results
+                                                          .internal_links ||
                                                           0) /
                                                           total) *
                                                           100
@@ -553,7 +528,8 @@ const UrlDetails = () => {
                                         const externalPercent =
                                             total > 0
                                                 ? Math.round(
-                                                      ((crawlData.external_links ||
+                                                      ((data.results
+                                                          .external_links ||
                                                           0) /
                                                           total) *
                                                           100
@@ -562,7 +538,8 @@ const UrlDetails = () => {
                                         const brokenPercent =
                                             total > 0
                                                 ? Math.round(
-                                                      ((crawlData.inaccessible_links ||
+                                                      ((data.results
+                                                          .inaccessible_links ||
                                                           0) /
                                                           total) *
                                                           100
@@ -750,32 +727,32 @@ const UrlDetails = () => {
                                     {[
                                         {
                                             label: "H1",
-                                            value: crawlData.h1_count,
+                                            value: data.results.h1_count,
                                             color: "primary",
                                         },
                                         {
                                             label: "H2",
-                                            value: crawlData.h2_count,
+                                            value: data.results.h2_count,
                                             color: "secondary",
                                         },
                                         {
                                             label: "H3",
-                                            value: crawlData.h3_count,
+                                            value: data.results.h3_count,
                                             color: "info",
                                         },
                                         {
                                             label: "H4",
-                                            value: crawlData.h4_count,
+                                            value: data.results.h4_count,
                                             color: "success",
                                         },
                                         {
                                             label: "H5",
-                                            value: crawlData.h5_count,
+                                            value: data.results.h5_count,
                                             color: "warning",
                                         },
                                         {
                                             label: "H6",
-                                            value: crawlData.h6_count,
+                                            value: data.results.h6_count,
                                             color: "error",
                                         },
                                     ].map((header, index) => (

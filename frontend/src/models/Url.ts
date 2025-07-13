@@ -50,6 +50,6 @@ export interface ApiCrawlResult {
 
 export interface ApiCrawlResponse {
     count: number;
-    results: ApiCrawlResult[];
+    results: ApiCrawlResult;
     url: ApiURL;
 }

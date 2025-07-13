@@ -38,12 +38,12 @@ export const getUrlsWithCrawls = async () => {
  * @param {number|string} id - The ID of the URL to crawl
  * @returns {Promise<any>} The API response
  */
-export const crawlUrl = async (id: number | string) => {
+export const crawlUrl = async (id: string) => {
     try {
         const response = await fetch(
             `http://localhost:8080/api/urls/${id}/crawl`,
             {
-                method: "POST",
+                method: "GET",
             }
         );
 
