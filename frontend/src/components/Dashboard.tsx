@@ -33,6 +33,7 @@ import {
     Stop,
     Delete,
     SelectAll,
+    RestartAlt,
 } from "@mui/icons-material";
 import { UrlWithCrawl } from "../models/Url";
 import {
@@ -40,6 +41,7 @@ import {
     startProcessingUrls,
     stopProcessingUrls,
     deleteUrls,
+    rerunAnalysis,
     startUrlProcessing,
     stopUrlProcessing,
 } from "../services/crawls";
@@ -309,6 +311,40 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         }
     };
 
+    const handleRerunAnalysis = async () => {
+        if (selectedUrls.size === 0) {
+            toast.warning("Please select URLs to re-run analysis");
+            return;
+        }
+
+        if (
+            !window.confirm(
+                `Are you sure you want to re-run analysis for ${selectedUrls.size} URL(s)? This will clear previous results and start fresh analysis.`
+            )
+        ) {
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await rerunAnalysis(Array.from(selectedUrls));
+            if (response.isSuccess) {
+                toast.success(
+                    `Re-started analysis for ${selectedUrls.size} URL(s)`
+                );
+                setSelectedUrls(new Set());
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to re-run analysis");
+            }
+        } catch (error) {
+            console.error("Failed to re-run analysis:", error);
+            toast.error("Failed to re-run analysis");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     // Individual URL control handlers
     const handleStartUrl = async (urlId: string, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent row click navigation
@@ -550,6 +586,19 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                     sx={{ textTransform: "none" }}
                                 >
                                     Stop
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Re-run Analysis">
+                            <span>
+                                <Button
+                                    size="small"
+                                    startIcon={<RestartAlt />}
+                                    onClick={handleRerunAnalysis}
+                                    disabled={isProcessing}
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Re-run
                                 </Button>
                             </span>
                         </Tooltip>

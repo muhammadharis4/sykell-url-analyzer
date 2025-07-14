@@ -242,6 +242,49 @@ export const deleteUrls = async (ids: string[]) => {
 };
 
 /**
+ * Re-runs analysis for multiple URLs (clears previous data and starts fresh)
+ * @param {string[]} ids - Array of URL IDs to re-analyze
+ * @returns {Promise<any>} The API response
+ */
+export const rerunAnalysis = async (ids: string[]) => {
+    try {
+        const response = await fetch(
+            "http://localhost:8080/api/urls/batch/rerun",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids }),
+            }
+        );
+
+        if (!response.ok) {
+            return {
+                isSuccess: false,
+                data: null,
+                error: `HTTP error! status: ${response.status}`,
+            };
+        }
+
+        const data = await response.json();
+        return {
+            isSuccess: true,
+            data,
+        };
+    } catch (error) {
+        return {
+            isSuccess: false,
+            data: null,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Network error occurred",
+        };
+    }
+};
+
+/**
  * Starts processing/crawling a specific URL by ID
  * @param {string} id - The ID of the URL to start processing
  * @returns {Promise<any>} The API response
