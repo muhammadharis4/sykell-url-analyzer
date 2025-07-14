@@ -1,10 +1,12 @@
+import { apiRequest } from '../utils/api';
+
 /**
  * Fetches all URLs with their crawl data
  * @returns {Promise<any>} The API response
  */
 export const getUrlsWithCrawls = async () => {
     try {
-        const response = await fetch("http://localhost:8080/api/urls/crawl", {
+        const response = await apiRequest("/api/urls/crawl", {
             method: "GET",
         });
 
@@ -79,11 +81,8 @@ export const crawlUrl = async (id: string) => {
  */
 export const addUrl = async (url: string) => {
     try {
-        const response = await fetch("http://localhost:8080/api/urls", {
+        const response = await apiRequest("/api/urls", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
             body: JSON.stringify({ url: url.trim() }),
         });
 

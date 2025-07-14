@@ -14,9 +14,10 @@ import {
     TextField,
     CircularProgress,
 } from "@mui/material";
-import { Analytics, Dashboard, Add, Menu } from "@mui/icons-material";
+import { Analytics, Dashboard, Add, Menu, Logout } from "@mui/icons-material";
 import { addUrl } from "../services/crawls";
 import { errorHandler } from "../utils/errorHandler";
+import { useAuth } from "../hooks/useAuth";
 
 /**
  * Header component with navigation and URL addition functionality
@@ -29,6 +30,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [url, setUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,6 +145,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                             sx={{ textTransform: "none" }}
                         >
                             Add URL
+                        </Button>
+                        <Button
+                            color="inherit"
+                            startIcon={<Logout />}
+                            onClick={logout}
+                            sx={{ textTransform: "none" }}
+                        >
+                            Logout
                         </Button>
                     </Box>
                 </Toolbar>

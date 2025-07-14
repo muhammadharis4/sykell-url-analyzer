@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import Dashboard from "./components/Dashboard";
 import UrlDetails from "./components/UrlDetails";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 import "./App.css";
 
 const theme = createTheme({
@@ -30,50 +32,54 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Router>
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        minHeight: "100vh",
-                    }}
-                >
-                    <Header onUrlAdded={handleUrlAdded} />
-                    <Box
-                        component="main"
-                        sx={{
-                            flexGrow: 1,
-                            p: 3,
-                            display: "flex",
-                            flexDirection: "column",
-                            minHeight: 0,
-                        }}
-                    >
-                        <Routes>
-                            <Route
-                                path="/"
-                                element={
-                                    <Dashboard
-                                        refreshTrigger={refreshTrigger}
+            <AuthProvider>
+                <Router>
+                    <ProtectedRoute>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                minHeight: "100vh",
+                            }}
+                        >
+                            <Header onUrlAdded={handleUrlAdded} />
+                            <Box
+                                component="main"
+                                sx={{
+                                    flexGrow: 1,
+                                    p: 3,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    minHeight: 0,
+                                }}
+                            >
+                                <Routes>
+                                    <Route
+                                        path="/"
+                                        element={
+                                            <Dashboard
+                                                refreshTrigger={refreshTrigger}
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                            <Route path="/url/:id" element={<UrlDetails />} />
-                        </Routes>
-                    </Box>
-                </Box>
-                <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                />
-            </Router>
+                                    <Route path="/url/:id" element={<UrlDetails />} />
+                                </Routes>
+                            </Box>
+                        </Box>
+                    </ProtectedRoute>
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                    />
+                </Router>
+            </AuthProvider>
         </ThemeProvider>
     );
 }

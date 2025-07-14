@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/controllers"
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -12,14 +13,24 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	// Create controller instances
 	urlController := controllers.NewURLController(db)
 	crawlController := controllers.NewCrawlController(db)
+	authController := controllers.NewAuthController()
 
 	router.Use(cors.Default())
 
 	// API group
 	api := router.Group("/api")
 
-	// URL routes
+	// Auth routes (no authentication required)
+	auth := api.Group("/auth")
+	{
+		auth.POST("/login", authController.Login)   // POST /api/auth/login
+		auth.POST("/logout", authController.Logout) // POST /api/auth/logout
+		auth.GET("/me", middleware.AuthMiddleware(), authController.Me) // GET /api/auth/me
+	}
+
+	// Protected URL routes (authentication required)
 	urls := api.Group("/urls")
+	urls.Use(middleware.AuthMiddleware()) // Apply auth middleware to all URL routes
 	{
 		urls.POST("", urlController.AddURL)                    // POST /api/urls
 		urls.GET("", urlController.GetURLs)                    // GET /api/urls
