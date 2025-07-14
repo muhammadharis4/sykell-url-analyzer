@@ -20,6 +20,11 @@ import {
     Button,
     Tooltip,
     Collapse,
+    TableSortLabel,
+    FormControl,
+    Select,
+    MenuItem,
+    InputLabel,
 } from "@mui/material";
 import {
     Refresh,
@@ -46,36 +51,52 @@ import { toast } from "react-toastify";
  * Fetches data from the API and provides basic filtering
  */
 const columns: TableColumn[] = [
-    { id: "select", label: "", minWidth: 50, align: "center" },
-    { id: "url", label: "URL", minWidth: 200 },
-    { id: "title", label: "Title", minWidth: 150 },
-    { id: "status", label: "Status", minWidth: 100, align: "center" },
+    { id: "select", label: "", minWidth: 50, align: "center", sortable: false },
+    { id: "url", label: "URL", minWidth: 200, sortable: true },
+    { id: "title", label: "Title", minWidth: 150, sortable: true },
+    {
+        id: "status",
+        label: "Status",
+        minWidth: 100,
+        align: "center",
+        sortable: true,
+    },
     {
         id: "html_version",
         label: "HTML Version",
         minWidth: 100,
         align: "center",
+        sortable: true,
     },
     {
         id: "internal_links",
         label: "Internal Links",
         minWidth: 120,
         align: "right",
+        sortable: true,
     },
     {
         id: "external_links",
         label: "External Links",
         minWidth: 120,
         align: "right",
+        sortable: true,
     },
     {
         id: "broken_links",
         label: "Broken Links",
         minWidth: 120,
         align: "right",
+        sortable: true,
     },
-    { id: "created_at", label: "Created", minWidth: 120 },
-    { id: "actions", label: "Actions", minWidth: 120, align: "center" },
+    { id: "created_at", label: "Created", minWidth: 120, sortable: true },
+    {
+        id: "actions",
+        label: "Actions",
+        minWidth: 120,
+        align: "center",
+        sortable: false,
+    },
 ];
 
 /**
@@ -93,6 +114,14 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    // Sorting state
+    const [sortBy, setSortBy] = useState<string>("created_at");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+    // Column filters
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [htmlVersionFilter, setHtmlVersionFilter] = useState<string>("all");
 
     // Selection state
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
@@ -315,17 +344,72 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         }
     };
 
-    // Filter data
-    const filteredData = (() => {
+    // Filter and sort data
+    const filteredAndSortedData = (() => {
         if (!data) return [];
 
-        return data.filter(
-            (row: UrlWithCrawl) =>
+        // First apply filters
+        const filtered = data.filter((row: UrlWithCrawl) => {
+            // Global search filter
+            const matchesSearch =
                 row.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 row.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                row.status.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+                row.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                row.html_version
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase());
+
+            // Status filter
+            const matchesStatus =
+                statusFilter === "all" || row.status === statusFilter;
+
+            // HTML Version filter
+            const matchesHtmlVersion =
+                htmlVersionFilter === "all" ||
+                row.html_version === htmlVersionFilter;
+
+            return matchesSearch && matchesStatus && matchesHtmlVersion;
+        });
+
+        // Then apply sorting
+        filtered.sort((a: UrlWithCrawl, b: UrlWithCrawl) => {
+            let aValue: string | number = a[sortBy as keyof UrlWithCrawl] as
+                | string
+                | number;
+            let bValue: string | number = b[sortBy as keyof UrlWithCrawl] as
+                | string
+                | number;
+
+            // Handle different data types
+            if (sortBy === "created_at") {
+                aValue = new Date(aValue as string).getTime();
+                bValue = new Date(bValue as string).getTime();
+            } else if (
+                ["internal_links", "external_links", "broken_links"].includes(
+                    sortBy
+                )
+            ) {
+                aValue = Number(aValue) || 0;
+                bValue = Number(bValue) || 0;
+            } else if (typeof aValue === "string") {
+                aValue = aValue.toLowerCase();
+                bValue = (bValue as string)?.toLowerCase() || "";
+            }
+
+            if (aValue < bValue) {
+                return sortOrder === "asc" ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortOrder === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+
+        return filtered;
     })();
+
+    // For backward compatibility, keep filteredData reference
+    const filteredData = filteredAndSortedData;
 
     // Helper functions for rendering
     const getStatusChip = (status: UrlWithCrawl["status"]) => {
@@ -370,6 +454,13 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const isIndeterminate =
         selectedUrls.size > 0 && selectedUrls.size < filteredData.length;
     const selectedCount = selectedUrls.size;
+
+    // Sorting handlers
+    const handleSortRequest = (columnId: string) => {
+        const isAsc = sortBy === columnId && sortOrder === "asc";
+        setSortOrder(isAsc ? "desc" : "asc");
+        setSortBy(columnId);
+    };
 
     return (
         <Box sx={{ width: "100%" }}>
@@ -501,22 +592,91 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                     </Box>
                 </Collapse>
 
-                <Box sx={{ p: 2, pb: 0 }}>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Search URLs, titles, or status..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        disabled={loading}
-                        InputProps={{
-                            startAdornment: (
-                                <Search
-                                    sx={{ mr: 1, color: "text.secondary" }}
-                                />
-                            ),
+                {/* Filter Controls */}
+                <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            gap: 2,
+                            alignItems: "center",
+                            mb: 2,
                         }}
-                    />
+                    >
+                        <TextField
+                            size="small"
+                            placeholder="Search URLs, titles, status, HTML version..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={loading}
+                            sx={{ flex: 1, minWidth: 250 }}
+                            InputProps={{
+                                startAdornment: (
+                                    <Search
+                                        sx={{ mr: 1, color: "text.secondary" }}
+                                    />
+                                ),
+                            }}
+                        />
+                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={statusFilter}
+                                onChange={(e) =>
+                                    setStatusFilter(e.target.value)
+                                }
+                                label="Status"
+                                disabled={loading}
+                            >
+                                <MenuItem value="all">All Status</MenuItem>
+                                <MenuItem value="queued">Queued</MenuItem>
+                                <MenuItem value="running">Running</MenuItem>
+                                <MenuItem value="completed">Completed</MenuItem>
+                                <MenuItem value="error">Error</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" sx={{ minWidth: 140 }}>
+                            <InputLabel>HTML Version</InputLabel>
+                            <Select
+                                value={htmlVersionFilter}
+                                onChange={(e) =>
+                                    setHtmlVersionFilter(e.target.value)
+                                }
+                                label="HTML Version"
+                                disabled={loading}
+                            >
+                                <MenuItem value="all">All Versions</MenuItem>
+                                <MenuItem value="HTML5">HTML5</MenuItem>
+                                <MenuItem value="HTML 4.01">HTML 4.01</MenuItem>
+                                <MenuItem value="XHTML">XHTML</MenuItem>
+                                <MenuItem value="Unknown">Unknown</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                                setHtmlVersionFilter("all");
+                            }}
+                            disabled={
+                                loading ||
+                                (searchTerm === "" &&
+                                    statusFilter === "all" &&
+                                    htmlVersionFilter === "all")
+                            }
+                            sx={{ textTransform: "none" }}
+                        >
+                            Clear Filters
+                        </Button>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                        {filteredData.length === data?.length
+                            ? `Showing ${filteredData.length} results`
+                            : `Showing ${filteredData.length} of ${
+                                  data?.length || 0
+                              } results`}
+                    </Typography>
                 </Box>
 
                 <TableContainer>
@@ -542,6 +702,20 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                                     filteredData.length === 0
                                                 }
                                             />
+                                        ) : column.sortable ? (
+                                            <TableSortLabel
+                                                active={sortBy === column.id}
+                                                direction={
+                                                    sortBy === column.id
+                                                        ? sortOrder
+                                                        : "asc"
+                                                }
+                                                onClick={() =>
+                                                    handleSortRequest(column.id)
+                                                }
+                                            >
+                                                {column.label}
+                                            </TableSortLabel>
                                         ) : (
                                             column.label
                                         )}
