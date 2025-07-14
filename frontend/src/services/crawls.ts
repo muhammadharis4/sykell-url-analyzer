@@ -119,13 +119,16 @@ export const addUrl = async (url: string) => {
  */
 export const startProcessingUrls = async (ids: string[]) => {
     try {
-        const response = await fetch("http://localhost:8080/api/urls/batch/start", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ids }),
-        });
+        const response = await fetch(
+            "http://localhost:8080/api/urls/batch/start",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids }),
+            }
+        );
 
         if (!response.ok) {
             return {
@@ -159,13 +162,16 @@ export const startProcessingUrls = async (ids: string[]) => {
  */
 export const stopProcessingUrls = async (ids: string[]) => {
     try {
-        const response = await fetch("http://localhost:8080/api/urls/batch/stop", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ids }),
-        });
+        const response = await fetch(
+            "http://localhost:8080/api/urls/batch/stop",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids }),
+            }
+        );
 
         if (!response.ok) {
             return {
@@ -199,13 +205,16 @@ export const stopProcessingUrls = async (ids: string[]) => {
  */
 export const deleteUrls = async (ids: string[]) => {
     try {
-        const response = await fetch("http://localhost:8080/api/urls/batch/delete", {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ids }),
-        });
+        const response = await fetch(
+            "http://localhost:8080/api/urls/batch/delete",
+            {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids }),
+            }
+        );
 
         if (!response.ok) {
             return {

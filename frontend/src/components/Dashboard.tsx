@@ -21,22 +21,22 @@ import {
     Tooltip,
     Collapse,
 } from "@mui/material";
-import { 
-    Refresh, 
-    Search, 
-    PlayArrow, 
-    Stop, 
+import {
+    Refresh,
+    Search,
+    PlayArrow,
+    Stop,
     Delete,
     SelectAll,
 } from "@mui/icons-material";
 import { UrlWithCrawl } from "../models/Url";
-import { 
-    getUrlsWithCrawls, 
-    startProcessingUrls, 
-    stopProcessingUrls, 
+import {
+    getUrlsWithCrawls,
+    startProcessingUrls,
+    stopProcessingUrls,
     deleteUrls,
     startUrlProcessing,
-    stopUrlProcessing
+    stopUrlProcessing,
 } from "../services/crawls";
 import { TableColumn } from "../types/Table";
 import { toast } from "react-toastify";
@@ -93,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    
+
     // Selection state
     const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
     const [isProcessing, setIsProcessing] = useState(false);
@@ -178,8 +178,8 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     // Selection handlers
     const handleSelectAll = () => {
         if (filteredData.length === 0) return;
-        
-        const allIds = new Set(filteredData.map(url => url.id.toString()));
+
+        const allIds = new Set(filteredData.map((url) => url.id.toString()));
         setSelectedUrls(allIds);
     };
 
@@ -206,7 +206,9 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
         setIsProcessing(true);
         try {
-            const response = await startProcessingUrls(Array.from(selectedUrls));
+            const response = await startProcessingUrls(
+                Array.from(selectedUrls)
+            );
             if (response.isSuccess) {
                 toast.success(`Started processing ${selectedUrls.size} URL(s)`);
                 setSelectedUrls(new Set());
@@ -252,7 +254,11 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to delete ${selectedUrls.size} URL(s)? This action cannot be undone.`)) {
+        if (
+            !window.confirm(
+                `Are you sure you want to delete ${selectedUrls.size} URL(s)? This action cannot be undone.`
+            )
+        ) {
             return;
         }
 
@@ -277,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     // Individual URL control handlers
     const handleStartUrl = async (urlId: string, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent row click navigation
-        
+
         try {
             const response = await startUrlProcessing(urlId);
             if (response.isSuccess) {
@@ -294,7 +300,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
     const handleStopUrl = async (urlId: string, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent row click navigation
-        
+
         try {
             const response = await stopUrlProcessing(urlId);
             if (response.isSuccess) {
@@ -359,8 +365,10 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const displayMessage = getDisplayContent();
 
     // Calculate selection stats
-    const isAllSelected = filteredData.length > 0 && selectedUrls.size === filteredData.length;
-    const isIndeterminate = selectedUrls.size > 0 && selectedUrls.size < filteredData.length;
+    const isAllSelected =
+        filteredData.length > 0 && selectedUrls.size === filteredData.length;
+    const isIndeterminate =
+        selectedUrls.size > 0 && selectedUrls.size < filteredData.length;
     const selectedCount = selectedUrls.size;
 
     return (
@@ -380,7 +388,10 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                     >
                         URL Analysis Dashboard
                         {selectedCount > 0 && (
-                            <Typography variant="caption" sx={{ ml: 2, color: "primary.main" }}>
+                            <Typography
+                                variant="caption"
+                                sx={{ ml: 2, color: "primary.main" }}
+                            >
                                 {selectedCount} selected
                             </Typography>
                         )}
@@ -472,11 +483,18 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Deselect All">
-                            <IconButton size="small" onClick={handleDeselectAll}>
-                                <Checkbox 
+                            <IconButton
+                                size="small"
+                                onClick={handleDeselectAll}
+                            >
+                                <Checkbox
                                     indeterminate={isIndeterminate}
                                     checked={isAllSelected}
-                                    onChange={() => isAllSelected ? handleDeselectAll() : handleSelectAll()}
+                                    onChange={() =>
+                                        isAllSelected
+                                            ? handleDeselectAll()
+                                            : handleSelectAll()
+                                    }
                                 />
                             </IconButton>
                         </Tooltip>
@@ -515,8 +533,14 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                             <Checkbox
                                                 indeterminate={isIndeterminate}
                                                 checked={isAllSelected}
-                                                onChange={() => isAllSelected ? handleDeselectAll() : handleSelectAll()}
-                                                disabled={filteredData.length === 0}
+                                                onChange={() =>
+                                                    isAllSelected
+                                                        ? handleDeselectAll()
+                                                        : handleSelectAll()
+                                                }
+                                                disabled={
+                                                    filteredData.length === 0
+                                                }
                                             />
                                         ) : (
                                             column.label
@@ -558,7 +582,9 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                         page * rowsPerPage + rowsPerPage
                                     )
                                     .map((row) => {
-                                        const isSelected = selectedUrls.has(row.id.toString());
+                                        const isSelected = selectedUrls.has(
+                                            row.id.toString()
+                                        );
                                         return (
                                             <TableRow
                                                 hover
@@ -571,63 +597,112 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                                         checked={isSelected}
                                                         onChange={(e) => {
                                                             e.stopPropagation();
-                                                            handleSelectUrl(row.id.toString());
+                                                            handleSelectUrl(
+                                                                row.id.toString()
+                                                            );
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell 
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                <TableCell
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.url}
                                                 </TableCell>
-                                                <TableCell 
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                <TableCell
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.title || "-"}
                                                 </TableCell>
-                                                <TableCell 
+                                                <TableCell
                                                     align="center"
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {getStatusChip(row.status)}
                                                 </TableCell>
-                                                <TableCell 
+                                                <TableCell
                                                     align="center"
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.html_version || "-"}
                                                 </TableCell>
-                                                <TableCell 
+                                                <TableCell
                                                     align="right"
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.internal_links || "-"}
                                                 </TableCell>
-                                                <TableCell 
+                                                <TableCell
                                                     align="right"
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.external_links || "-"}
                                                 </TableCell>
-                                                <TableCell 
+                                                <TableCell
                                                     align="right"
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {row.broken_links || "-"}
                                                 </TableCell>
-                                                <TableCell 
-                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                <TableCell
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/url/${row.id}`
+                                                        )
+                                                    }
                                                 >
                                                     {formatDate(row.created_at)}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
-                                                        {row.status === "running" ? (
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            gap: 0.5,
+                                                            justifyContent:
+                                                                "center",
+                                                        }}
+                                                    >
+                                                        {row.status ===
+                                                        "running" ? (
                                                             <Tooltip title="Stop Processing">
                                                                 <IconButton
                                                                     size="small"
                                                                     color="error"
-                                                                    onClick={(e) => handleStopUrl(row.id.toString(), e)}
+                                                                    onClick={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleStopUrl(
+                                                                            row.id.toString(),
+                                                                            e
+                                                                        )
+                                                                    }
                                                                 >
                                                                     <Stop />
                                                                 </IconButton>
@@ -637,8 +712,18 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                                                 <IconButton
                                                                     size="small"
                                                                     color="primary"
-                                                                    onClick={(e) => handleStartUrl(row.id.toString(), e)}
-                                                                    disabled={row.status === "error"}
+                                                                    onClick={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleStartUrl(
+                                                                            row.id.toString(),
+                                                                            e
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        row.status ===
+                                                                        "error"
+                                                                    }
                                                                 >
                                                                     <PlayArrow />
                                                                 </IconButton>

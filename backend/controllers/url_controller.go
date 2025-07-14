@@ -148,7 +148,7 @@ func (uc *URLController) DeleteURL(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "URL deleted successfully",
-		"url_id": id,
+		"url_id":  id,
 	})
 }
 
@@ -278,7 +278,7 @@ func (uc *URLController) BatchDeleteURLs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":      "URLs deleted successfully",
+		"message":       "URLs deleted successfully",
 		"deleted_count": result.RowsAffected,
 		"total_count":   len(request.IDs),
 	})
