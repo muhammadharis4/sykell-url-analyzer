@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: sykell-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=sykell_user
+      - DB_PASS=sykell_pass
+      - DB_NAME=sykell_url_analyzer
+      - ENVIRONMENT=production
+    depends_on:
+      - db
+  db:
+    image: mysql:8.0
+    container_name: sykell-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: sykell_url_analyzer
+      MYSQL_USER: sykell_user
+      MYSQL_PASSWORD: sykell_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sykell-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8080
+volumes:
+  db_data:
