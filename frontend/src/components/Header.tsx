@@ -14,9 +14,13 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { Analytics, Dashboard, Add, Menu } from "@mui/icons-material";
-import { toast } from "react-toastify";
 import { addUrl } from "../services/crawls";
+import { errorHandler } from "../utils/errorHandler";
 
+/**
+ * Header component with navigation and URL addition functionality
+ * Provides a clean interface for adding new URLs to analyze
+ */
 interface HeaderProps {
     onMenuClick?: () => void;
     onUrlAdded?: () => void; // Callback to refresh dashboard when URL is added
@@ -29,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
 
     const handleAddUrl = async () => {
         if (!url.trim()) {
-            toast.error("Please enter a valid URL");
+            errorHandler.showWarning("Please enter a valid URL");
             return;
         }
 
@@ -37,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
         try {
             new URL(url);
         } catch {
-            toast.error("Please enter a valid URL format");
+            errorHandler.showWarning("Please enter a valid URL format");
             return;
         }
 
@@ -46,10 +50,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
             const response = await addUrl(url);
 
             if (!response.isSuccess) {
-                throw new Error(response.error || "Failed to add URL");
+                errorHandler.handleApiError(response, "Failed to add URL");
+                return;
             }
 
-            toast.success("URL added successfully!");
+            errorHandler.showSuccess("URL added successfully!");
             setUrl("");
             setIsDialogOpen(false);
 
@@ -58,8 +63,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                 onUrlAdded();
             }
         } catch (error) {
-            toast.error("Failed to add URL. Please try again.");
-            console.error("Error adding URL:", error);
+            errorHandler.handleNetworkError(error, "add URL");
         } finally {
             setIsSubmitting(false);
         }

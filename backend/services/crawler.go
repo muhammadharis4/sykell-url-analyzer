@@ -12,98 +12,107 @@ import (
 	"gorm.io/gorm"
 )
 
+// CrawlerService handles website crawling and analysis operations
 type CrawlerService struct {
-	db *gorm.DB
+	db     *gorm.DB
+	client *http.Client
 }
 
+// NewCrawlerService creates a new crawler service instance with configured HTTP client
 func NewCrawlerService(db *gorm.DB) *CrawlerService {
-	return &CrawlerService{db: db}
+	return &CrawlerService{
+		db: db,
+		client: &http.Client{
+			Timeout: 30 * time.Second, // Set reasonable timeout for HTTP requests
+		},
+	}
 }
 
-// CrawlURL performs the actual website analysis
+// CrawlURL orchestrates the complete crawling process for a given URL
+// It handles status updates, performs the actual crawl, and saves results
 func (c *CrawlerService) CrawlURL(urlID uint) error {
-	// Get the URL record first to check current status
+	// Retrieve the URL record to check current status
 	var urlModel models.URL
 	if err := c.db.First(&urlModel, urlID).Error; err != nil {
-		return err
+		return fmt.Errorf("failed to find URL with ID %d: %v", urlID, err)
 	}
 
-	// Check if already completed to avoid re-crawling unnecessarily
+	// Skip crawling if already completed to avoid unnecessary re-processing
 	if urlModel.Status == "completed" {
-		return nil // Already completed, no need to crawl again
+		return nil // Already completed, no action needed
 	}
 
-	// Update status to running only if not already running
+	// Update status to running only if not already in progress
 	if urlModel.Status != "running" {
 		if err := c.db.Model(&urlModel).Update("status", "running").Error; err != nil {
-			return err
+			return fmt.Errorf("failed to update URL status to running: %v", err)
 		}
 	}
 
-	// Perform the crawl
+	// Execute the actual crawling and analysis
 	result, err := c.performCrawl(urlModel.URL)
 	if err != nil {
-		// Update status to error
+		// Update status to error and return the error
 		c.db.Model(&models.URL{}).Where("id = ?", urlID).Update("status", "error")
-		return err
+		return fmt.Errorf("crawling failed for URL %s: %v", urlModel.URL, err)
 	}
 
-	// Save results
+	// Associate the crawl result with the URL
 	result.URLID = urlID
 	if err := c.db.Create(result).Error; err != nil {
+		// Update status to error if we can't save results
 		c.db.Model(&models.URL{}).Where("id = ?", urlID).Update("status", "error")
-		return err
+		return fmt.Errorf("failed to save crawl results: %v", err)
 	}
 
-	// Update status to completed
+	// Mark URL as completed
 	if err := c.db.Model(&models.URL{}).Where("id = ?", urlID).Update("status", "completed").Error; err != nil {
-		return err
+		return fmt.Errorf("failed to update URL status to completed: %v", err)
 	}
 
 	return nil
 }
 
-// performCrawl does the actual website analysis
+// performCrawl executes the actual website analysis and data extraction
+// It fetches the webpage, parses HTML, and extracts all relevant information
 func (c *CrawlerService) performCrawl(targetURL string) (*models.CrawlResult, error) {
-	// Fetch the webpage
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Get(targetURL)
+	// Fetch the webpage using configured HTTP client
+	resp, err := c.client.Get(targetURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch URL: %v", err)
 	}
 	defer resp.Body.Close()
 
+	// Check for successful HTTP response
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	// Parse HTML
+	// Parse the HTML document
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %v", err)
 	}
 
+	// Initialize crawl result with timestamp
 	result := &models.CrawlResult{
 		CrawledAt: time.Now(),
 	}
 
-	// Extract all the required information
-	c.extractTitle(doc, result)
-	c.extractHTMLVersion(doc, result)
-	c.extractHeadingCounts(doc, result)
-	c.extractLinks(doc, result, targetURL)
-	c.checkLoginForm(doc, result)
+	// Extract various pieces of information from the HTML document
+	c.extractTitle(doc, result)            // Page title
+	c.extractHTMLVersion(doc, result)      // HTML version detection
+	c.extractHeadingCounts(doc, result)    // H1-H6 heading counts
+	c.extractLinks(doc, result, targetURL) // Internal/external links
+	c.checkLoginForm(doc, result)          // Login form detection
 
-	// Check link accessibility (this might take a while)
+	// Perform link accessibility check (may take additional time)
 	c.checkLinkAccessibility(result)
 
 	return result, nil
 }
 
-// Extract page title
+// extractTitle extracts the page title from the HTML document
 func (c *CrawlerService) extractTitle(doc *html.Node, result *models.CrawlResult) {
 	var findTitle func(*html.Node) string
 	findTitle = func(n *html.Node) string {

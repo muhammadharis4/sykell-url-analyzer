@@ -12,105 +12,129 @@ import (
 	"gorm.io/gorm"
 )
 
+// URLController handles HTTP requests related to URL management and crawling operations
 type URLController struct {
-	db             *gorm.DB
-	crawlerService *services.CrawlerService
+	db                *gorm.DB
+	crawlerService    *services.CrawlerService
+	validationService *services.URLValidationService
+	responseUtil      *utils.ResponseUtil
 }
 
+// NewURLController creates a new instance of URLController with all required dependencies
 func NewURLController(db *gorm.DB) *URLController {
 	return &URLController{
-		db:             db,
-		crawlerService: services.NewCrawlerService(db),
+		db:                db,
+		crawlerService:    services.NewCrawlerService(db),
+		validationService: services.NewURLValidationService(),
+		responseUtil:      utils.NewResponseUtil(),
 	}
 }
 
-// AddURL - POST /api/urls
+// AddURLRequest represents the request body for adding a new URL
+type AddURLRequest struct {
+	URL string `json:"url" binding:"required"`
+}
+
+// AddURL handles POST /api/urls - Adds a new URL to the system and starts crawling automatically
 func (uc *URLController) AddURL(c *gin.Context) {
-	var request struct {
-		URL string `json:"url" binding:"required"`
-	}
+	var request AddURLRequest
 
+	// Parse and validate request body
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid URL provided",
-		})
+		uc.responseUtil.BadRequest(c, "Invalid request body: URL is required")
 		return
 	}
 
-	// Check if URL already exists
+	// Validate and sanitize the URL
+	sanitizedURL, err := uc.validationService.ValidateAndSanitizeURL(request.URL)
+	if err != nil {
+		uc.responseUtil.BadRequest(c, fmt.Sprintf("Invalid URL: %v", err))
+		return
+	}
+
+	// Check if URL already exists in the database
 	var existingURL models.URL
-	if err := uc.db.Where("url = ?", request.URL).First(&existingURL).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": "URL already exists",
-			"url":   existingURL,
+	if err := uc.db.Where("url = ?", sanitizedURL).First(&existingURL).Error; err == nil {
+		uc.responseUtil.Conflict(c, "URL already exists in the system", map[string]interface{}{
+			"existing_url": existingURL,
 		})
 		return
 	}
 
-	// Create new URL
+	// Create new URL record with initial status
 	url := models.URL{
-		URL:    request.URL,
-		Status: "running", // Start as running since we'll begin crawling immediately
+		URL:    sanitizedURL,
+		Status: "running", // Start as running since crawling begins immediately
 	}
 
+	// Save URL to database
 	if err := uc.db.Create(&url).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to save URL",
-		})
+		utils.AppLogger.Error(fmt.Sprintf("Failed to save URL to database: %v", err))
+		uc.responseUtil.InternalServerError(c, "Failed to save URL")
 		return
 	}
 
-	// Start crawling automatically in a goroutine (non-blocking)
+	// Start crawling process asynchronously (non-blocking)
 	go func() {
 		if err := uc.crawlerService.CrawlURL(url.ID); err != nil {
-			// Log error (in production, you'd want proper logging)
-			// The crawler service already updates the status to "error"
+			utils.AppLogger.Error(fmt.Sprintf("Crawling failed for URL ID %d: %v", url.ID, err))
 		}
 	}()
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "URL added and crawling started automatically",
-		"url":     url,
-		"status":  "running",
-	})
+	// Return success response
+	uc.responseUtil.Created(c, map[string]interface{}{
+		"id":     url.ID,
+		"url":    url.URL,
+		"status": url.Status,
+	}, "URL added successfully and crawling started")
 }
 
-// GetURLs - GET /api/urls
+// GetURLs handles GET /api/urls - Retrieves all URLs with their enriched crawl data
 func (uc *URLController) GetURLs(c *gin.Context) {
 	var urls []models.URL
+
+	// Fetch all URLs ordered by creation date (newest first)
 	if err := uc.db.Order("created_at desc").Find(&urls).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URLs"})
+		utils.AppLogger.Error(fmt.Sprintf("Failed to retrieve URLs from database: %v", err))
+		uc.responseUtil.InternalServerError(c, "Failed to retrieve URLs")
 		return
 	}
 
+	// Enrich each URL with crawl data
 	var enrichedURLs []map[string]interface{}
 	for _, url := range urls {
 		enrichedURLs = append(enrichedURLs, utils.EnrichURL(uc.db, url))
 	}
-	c.JSON(http.StatusOK, gin.H{"urls": enrichedURLs})
+
+	uc.responseUtil.Success(c, map[string]interface{}{
+		"urls": enrichedURLs,
+	}, "URLs retrieved successfully")
 }
 
-// GetURL - GET /api/urls/:id
+// GetURL handles GET /api/urls/:id - Retrieves a specific URL with its enriched crawl data
 func (uc *URLController) GetURL(c *gin.Context) {
+	// Parse and validate URL ID from path parameter
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid URL ID",
-		})
+		uc.responseUtil.BadRequest(c, "Invalid URL ID format")
 		return
 	}
 
+	// Fetch URL from database
 	var url models.URL
 	if err := uc.db.First(&url, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
+			uc.responseUtil.NotFound(c, "URL not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
+		utils.AppLogger.Error(fmt.Sprintf("Failed to retrieve URL %d: %v", id, err))
+		uc.responseUtil.InternalServerError(c, "Failed to retrieve URL")
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.EnrichURL(uc.db, url))
+	// Return enriched URL data
+	enrichedURL := utils.EnrichURL(uc.db, url)
+	uc.responseUtil.Success(c, enrichedURL, "URL retrieved successfully")
 }
 
 // DeleteURL - DELETE /api/urls/:id

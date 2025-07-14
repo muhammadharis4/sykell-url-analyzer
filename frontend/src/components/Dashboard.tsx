@@ -46,11 +46,11 @@ import {
     stopUrlProcessing,
 } from "../services/crawls";
 import { TableColumn } from "../types/Table";
-import { toast } from "react-toastify";
+import { errorHandler } from "../utils/errorHandler";
 
 /**
- * Dashboard component to display URLs
- * Fetches data from the API and provides basic filtering
+ * Dashboard component to display URLs with comprehensive management features
+ * Includes sorting, filtering, bulk operations, and real-time status updates
  */
 const columns: TableColumn[] = [
     { id: "select", label: "", minWidth: 50, align: "center", sortable: false },
@@ -145,7 +145,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         }
     };
 
-    // Fetch data from API
+    // Fetch data from API with error handling
     const fetchData = async () => {
         setLoading(true);
 
@@ -154,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         if (response.isSuccess) {
             setData(response.data.urls);
         } else {
-            toast.error("Failed to fetch crawl data");
+            errorHandler.handleApiError(response, "Failed to fetch crawl data");
             setData(null);
         }
 
@@ -231,7 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     // Bulk action handlers
     const handleStartProcessing = async () => {
         if (selectedUrls.size === 0) {
-            toast.warning("Please select URLs to start processing");
+            errorHandler.showWarning("Please select URLs to start processing");
             return;
         }
 
@@ -241,15 +241,19 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                 Array.from(selectedUrls)
             );
             if (response.isSuccess) {
-                toast.success(`Started processing ${selectedUrls.size} URL(s)`);
+                errorHandler.showSuccess(
+                    `Started processing ${selectedUrls.size} URL(s)`
+                );
                 setSelectedUrls(new Set());
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to start processing");
+                errorHandler.handleApiError(
+                    response,
+                    "Failed to start processing"
+                );
             }
         } catch (error) {
-            console.error("Failed to start processing URLs:", error);
-            toast.error("Failed to start processing URLs");
+            errorHandler.handleNetworkError(error, "start processing URLs");
         } finally {
             setIsProcessing(false);
         }
@@ -257,7 +261,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
     const handleStopProcessing = async () => {
         if (selectedUrls.size === 0) {
-            toast.warning("Please select URLs to stop processing");
+            errorHandler.showWarning("Please select URLs to stop processing");
             return;
         }
 
@@ -265,15 +269,19 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         try {
             const response = await stopProcessingUrls(Array.from(selectedUrls));
             if (response.isSuccess) {
-                toast.success(`Stopped processing ${selectedUrls.size} URL(s)`);
+                errorHandler.showSuccess(
+                    `Stopped processing ${selectedUrls.size} URL(s)`
+                );
                 setSelectedUrls(new Set());
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to stop processing");
+                errorHandler.handleApiError(
+                    response,
+                    "Failed to stop processing"
+                );
             }
         } catch (error) {
-            console.error("Failed to stop processing URLs:", error);
-            toast.error("Failed to stop processing URLs");
+            errorHandler.handleNetworkError(error, "stop processing URLs");
         } finally {
             setIsProcessing(false);
         }
@@ -281,7 +289,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
     const handleDeleteUrls = async () => {
         if (selectedUrls.size === 0) {
-            toast.warning("Please select URLs to delete");
+            errorHandler.showWarning("Please select URLs to delete");
             return;
         }
 
@@ -297,15 +305,14 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         try {
             const response = await deleteUrls(Array.from(selectedUrls));
             if (response.isSuccess) {
-                toast.success(`Deleted ${selectedUrls.size} URL(s)`);
+                errorHandler.showSuccess(`Deleted ${selectedUrls.size} URL(s)`);
                 setSelectedUrls(new Set());
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to delete URLs");
+                errorHandler.handleApiError(response, "Failed to delete URLs");
             }
         } catch (error) {
-            console.error("Failed to delete URLs:", error);
-            toast.error("Failed to delete URLs");
+            errorHandler.handleNetworkError(error, "delete URLs");
         } finally {
             setIsProcessing(false);
         }
@@ -313,7 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
     const handleRerunAnalysis = async () => {
         if (selectedUrls.size === 0) {
-            toast.warning("Please select URLs to re-run analysis");
+            errorHandler.showWarning("Please select URLs to re-run analysis");
             return;
         }
 
@@ -329,17 +336,19 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         try {
             const response = await rerunAnalysis(Array.from(selectedUrls));
             if (response.isSuccess) {
-                toast.success(
+                errorHandler.showSuccess(
                     `Re-started analysis for ${selectedUrls.size} URL(s)`
                 );
                 setSelectedUrls(new Set());
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to re-run analysis");
+                errorHandler.handleApiError(
+                    response,
+                    "Failed to re-run analysis"
+                );
             }
         } catch (error) {
-            console.error("Failed to re-run analysis:", error);
-            toast.error("Failed to re-run analysis");
+            errorHandler.handleNetworkError(error, "re-run analysis");
         } finally {
             setIsProcessing(false);
         }
@@ -352,14 +361,16 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         try {
             const response = await startUrlProcessing(urlId);
             if (response.isSuccess) {
-                toast.success("Started processing URL");
+                errorHandler.showSuccess("Started processing URL");
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to start processing URL");
+                errorHandler.handleApiError(
+                    response,
+                    "Failed to start processing URL"
+                );
             }
         } catch (error) {
-            console.error("Failed to start URL processing:", error);
-            toast.error("Failed to start processing URL");
+            errorHandler.handleNetworkError(error, "start URL processing");
         }
     };
 
@@ -369,14 +380,16 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         try {
             const response = await stopUrlProcessing(urlId);
             if (response.isSuccess) {
-                toast.success("Stopped processing URL");
+                errorHandler.showSuccess("Stopped processing URL");
                 fetchData(); // Refresh data
             } else {
-                toast.error(response.error || "Failed to stop processing URL");
+                errorHandler.handleApiError(
+                    response,
+                    "Failed to stop processing URL"
+                );
             }
         } catch (error) {
-            console.error("Failed to stop URL processing:", error);
-            toast.error("Failed to stop processing URL");
+            errorHandler.handleNetworkError(error, "stop URL processing");
         }
     };
 
