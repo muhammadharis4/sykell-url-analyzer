@@ -98,6 +98,3 @@ See `docker-compose.yml` for all environment variables and their defaults. You c
 
 ---
 
-## License
-
-MIT
