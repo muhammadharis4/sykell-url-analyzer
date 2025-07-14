@@ -16,10 +16,28 @@ import {
     Chip,
     IconButton,
     CircularProgress,
+    Checkbox,
+    Button,
+    Tooltip,
+    Collapse,
 } from "@mui/material";
-import { Refresh, Search } from "@mui/icons-material";
+import { 
+    Refresh, 
+    Search, 
+    PlayArrow, 
+    Stop, 
+    Delete,
+    SelectAll,
+} from "@mui/icons-material";
 import { UrlWithCrawl } from "../models/Url";
-import { getUrlsWithCrawls } from "../services/crawls";
+import { 
+    getUrlsWithCrawls, 
+    startProcessingUrls, 
+    stopProcessingUrls, 
+    deleteUrls,
+    startUrlProcessing,
+    stopUrlProcessing
+} from "../services/crawls";
 import { TableColumn } from "../types/Table";
 import { toast } from "react-toastify";
 
@@ -28,6 +46,7 @@ import { toast } from "react-toastify";
  * Fetches data from the API and provides basic filtering
  */
 const columns: TableColumn[] = [
+    { id: "select", label: "", minWidth: 50, align: "center" },
     { id: "url", label: "URL", minWidth: 200 },
     { id: "title", label: "Title", minWidth: 150 },
     { id: "status", label: "Status", minWidth: 100, align: "center" },
@@ -56,6 +75,7 @@ const columns: TableColumn[] = [
         align: "right",
     },
     { id: "created_at", label: "Created", minWidth: 120 },
+    { id: "actions", label: "Actions", minWidth: 120, align: "center" },
 ];
 
 /**
@@ -73,6 +93,10 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    
+    // Selection state
+    const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Polling state
     const [isPolling, setIsPolling] = useState(false);
@@ -151,6 +175,140 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
         fetchData();
     };
 
+    // Selection handlers
+    const handleSelectAll = () => {
+        if (filteredData.length === 0) return;
+        
+        const allIds = new Set(filteredData.map(url => url.id.toString()));
+        setSelectedUrls(allIds);
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedUrls(new Set());
+    };
+
+    const handleSelectUrl = (id: string) => {
+        const newSelected = new Set(selectedUrls);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedUrls(newSelected);
+    };
+
+    // Bulk action handlers
+    const handleStartProcessing = async () => {
+        if (selectedUrls.size === 0) {
+            toast.warning("Please select URLs to start processing");
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await startProcessingUrls(Array.from(selectedUrls));
+            if (response.isSuccess) {
+                toast.success(`Started processing ${selectedUrls.size} URL(s)`);
+                setSelectedUrls(new Set());
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to start processing");
+            }
+        } catch (error) {
+            console.error("Failed to start processing URLs:", error);
+            toast.error("Failed to start processing URLs");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleStopProcessing = async () => {
+        if (selectedUrls.size === 0) {
+            toast.warning("Please select URLs to stop processing");
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await stopProcessingUrls(Array.from(selectedUrls));
+            if (response.isSuccess) {
+                toast.success(`Stopped processing ${selectedUrls.size} URL(s)`);
+                setSelectedUrls(new Set());
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to stop processing");
+            }
+        } catch (error) {
+            console.error("Failed to stop processing URLs:", error);
+            toast.error("Failed to stop processing URLs");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDeleteUrls = async () => {
+        if (selectedUrls.size === 0) {
+            toast.warning("Please select URLs to delete");
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to delete ${selectedUrls.size} URL(s)? This action cannot be undone.`)) {
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await deleteUrls(Array.from(selectedUrls));
+            if (response.isSuccess) {
+                toast.success(`Deleted ${selectedUrls.size} URL(s)`);
+                setSelectedUrls(new Set());
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to delete URLs");
+            }
+        } catch (error) {
+            console.error("Failed to delete URLs:", error);
+            toast.error("Failed to delete URLs");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Individual URL control handlers
+    const handleStartUrl = async (urlId: string, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent row click navigation
+        
+        try {
+            const response = await startUrlProcessing(urlId);
+            if (response.isSuccess) {
+                toast.success("Started processing URL");
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to start processing URL");
+            }
+        } catch (error) {
+            console.error("Failed to start URL processing:", error);
+            toast.error("Failed to start processing URL");
+        }
+    };
+
+    const handleStopUrl = async (urlId: string, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent row click navigation
+        
+        try {
+            const response = await stopUrlProcessing(urlId);
+            if (response.isSuccess) {
+                toast.success("Stopped processing URL");
+                fetchData(); // Refresh data
+            } else {
+                toast.error(response.error || "Failed to stop processing URL");
+            }
+        } catch (error) {
+            console.error("Failed to stop URL processing:", error);
+            toast.error("Failed to stop processing URL");
+        }
+    };
+
     // Filter data
     const filteredData = (() => {
         if (!data) return [];
@@ -200,6 +358,11 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
 
     const displayMessage = getDisplayContent();
 
+    // Calculate selection stats
+    const isAllSelected = filteredData.length > 0 && selectedUrls.size === filteredData.length;
+    const isIndeterminate = selectedUrls.size > 0 && selectedUrls.size < filteredData.length;
+    const selectedCount = selectedUrls.size;
+
     return (
         <Box sx={{ width: "100%" }}>
             <Paper
@@ -216,6 +379,11 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                         component="div"
                     >
                         URL Analysis Dashboard
+                        {selectedCount > 0 && (
+                            <Typography variant="caption" sx={{ ml: 2, color: "primary.main" }}>
+                                {selectedCount} selected
+                            </Typography>
+                        )}
                     </Typography>
 
                     {/* Polling indicator */}
@@ -242,6 +410,78 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                         <Refresh />
                     </IconButton>
                 </Toolbar>
+
+                {/* Bulk actions toolbar */}
+                <Collapse in={selectedCount > 0}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            px: 2,
+                            py: 1,
+                            bgcolor: "action.selected",
+                            borderBottom: 1,
+                            borderColor: "divider",
+                        }}
+                    >
+                        <Tooltip title="Start Processing">
+                            <span>
+                                <Button
+                                    size="small"
+                                    startIcon={<PlayArrow />}
+                                    onClick={handleStartProcessing}
+                                    disabled={isProcessing}
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Start
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Stop Processing">
+                            <span>
+                                <Button
+                                    size="small"
+                                    startIcon={<Stop />}
+                                    onClick={handleStopProcessing}
+                                    disabled={isProcessing}
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Stop
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Delete URLs">
+                            <span>
+                                <Button
+                                    size="small"
+                                    startIcon={<Delete />}
+                                    onClick={handleDeleteUrls}
+                                    disabled={isProcessing}
+                                    color="error"
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Delete
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Tooltip title="Select All">
+                            <IconButton size="small" onClick={handleSelectAll}>
+                                <SelectAll />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Deselect All">
+                            <IconButton size="small" onClick={handleDeselectAll}>
+                                <Checkbox 
+                                    indeterminate={isIndeterminate}
+                                    checked={isAllSelected}
+                                    onChange={() => isAllSelected ? handleDeselectAll() : handleSelectAll()}
+                                />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                </Collapse>
 
                 <Box sx={{ p: 2, pb: 0 }}>
                     <TextField
@@ -271,7 +511,16 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                         align={column.align}
                                         style={{ minWidth: column.minWidth }}
                                     >
-                                        {column.label}
+                                        {column.id === "select" ? (
+                                            <Checkbox
+                                                indeterminate={isIndeterminate}
+                                                checked={isAllSelected}
+                                                onChange={() => isAllSelected ? handleDeselectAll() : handleSelectAll()}
+                                                disabled={filteredData.length === 0}
+                                            />
+                                        ) : (
+                                            column.label
+                                        )}
                                     </TableCell>
                                 ))}
                             </TableRow>
@@ -308,39 +557,98 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                                         page * rowsPerPage,
                                         page * rowsPerPage + rowsPerPage
                                     )
-                                    .map((row) => (
-                                        <TableRow
-                                            hover
-                                            key={row.id}
-                                            onClick={() =>
-                                                navigate(`/url/${row.id}`)
-                                            }
-                                            sx={{ cursor: "pointer" }}
-                                        >
-                                            <TableCell>{row.url}</TableCell>
-                                            <TableCell>
-                                                {row.title || "-"}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                {getStatusChip(row.status)}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                {row.html_version || "-"}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                {row.internal_links || "-"}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                {row.external_links || "-"}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                {row.broken_links || "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatDate(row.created_at)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    .map((row) => {
+                                        const isSelected = selectedUrls.has(row.id.toString());
+                                        return (
+                                            <TableRow
+                                                hover
+                                                key={row.id}
+                                                selected={isSelected}
+                                                sx={{ cursor: "pointer" }}
+                                            >
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox
+                                                        checked={isSelected}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSelectUrl(row.id.toString());
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell 
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.url}
+                                                </TableCell>
+                                                <TableCell 
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.title || "-"}
+                                                </TableCell>
+                                                <TableCell 
+                                                    align="center"
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {getStatusChip(row.status)}
+                                                </TableCell>
+                                                <TableCell 
+                                                    align="center"
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.html_version || "-"}
+                                                </TableCell>
+                                                <TableCell 
+                                                    align="right"
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.internal_links || "-"}
+                                                </TableCell>
+                                                <TableCell 
+                                                    align="right"
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.external_links || "-"}
+                                                </TableCell>
+                                                <TableCell 
+                                                    align="right"
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {row.broken_links || "-"}
+                                                </TableCell>
+                                                <TableCell 
+                                                    onClick={() => navigate(`/url/${row.id}`)}
+                                                >
+                                                    {formatDate(row.created_at)}
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
+                                                        {row.status === "running" ? (
+                                                            <Tooltip title="Stop Processing">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={(e) => handleStopUrl(row.id.toString(), e)}
+                                                                >
+                                                                    <Stop />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Tooltip title="Start Processing">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    onClick={(e) => handleStartUrl(row.id.toString(), e)}
+                                                                    disabled={row.status === "error"}
+                                                                >
+                                                                    <PlayArrow />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                             )}
                         </TableBody>
                     </Table>

@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { Analytics, Dashboard, Add, Menu } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import { addUrl } from "../services/crawls";
 
 interface HeaderProps {
     onMenuClick?: () => void;
@@ -42,17 +43,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
 
         setIsSubmitting(true);
         try {
-            // TODO: Replace with actual API call
-            const response = await fetch("http://localhost:8080/api/urls", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ url: url.trim() }),
-            });
+            const response = await addUrl(url);
 
-            if (!response.ok) {
-                throw new Error("Failed to add URL");
+            if (!response.isSuccess) {
+                throw new Error(response.error || "Failed to add URL");
             }
 
             toast.success("URL added successfully!");
