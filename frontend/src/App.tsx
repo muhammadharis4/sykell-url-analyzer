@@ -62,7 +62,10 @@ function App() {
                                             />
                                         }
                                     />
-                                    <Route path="/url/:id" element={<UrlDetails />} />
+                                    <Route
+                                        path="/url/:id"
+                                        element={<UrlDetails />}
+                                    />
                                 </Routes>
                             </Box>
                         </Box>

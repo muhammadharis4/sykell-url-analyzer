@@ -1,4 +1,4 @@
-import { apiRequest } from '../utils/api';
+import { apiRequest } from "../utils/api";
 
 /**
  * Fetches all URLs with their crawl data

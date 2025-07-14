@@ -1,7 +1,7 @@
-import React from 'react';
-import { Box, CircularProgress } from '@mui/material';
-import { useAuth } from '../hooks/useAuth';
-import Login from './Login';
+import React from "react";
+import { Box, CircularProgress } from "@mui/material";
+import { useAuth } from "../hooks/useAuth";
+import Login from "./Login";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;

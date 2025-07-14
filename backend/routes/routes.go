@@ -23,8 +23,8 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	// Auth routes (no authentication required)
 	auth := api.Group("/auth")
 	{
-		auth.POST("/login", authController.Login)   // POST /api/auth/login
-		auth.POST("/logout", authController.Logout) // POST /api/auth/logout
+		auth.POST("/login", authController.Login)                       // POST /api/auth/login
+		auth.POST("/logout", authController.Logout)                     // POST /api/auth/logout
 		auth.GET("/me", middleware.AuthMiddleware(), authController.Me) // GET /api/auth/me
 	}
 

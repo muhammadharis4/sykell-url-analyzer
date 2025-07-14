@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 // AuthController handles authentication endpoints

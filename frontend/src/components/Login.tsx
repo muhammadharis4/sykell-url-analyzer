@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
     Box,
     Paper,
@@ -8,29 +8,29 @@ import {
     Alert,
     CircularProgress,
     Container,
-} from '@mui/material';
-import { Lock } from '@mui/icons-material';
-import { useAuth } from '../hooks/useAuth';
+} from "@mui/material";
+import { Lock } from "@mui/icons-material";
+import { useAuth } from "../hooks/useAuth";
 
 const Login: React.FC = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const success = await login(username, password);
             if (!success) {
-                setError('Invalid username or password');
+                setError("Invalid username or password");
             }
         } catch {
-            setError('Login failed. Please try again.');
+            setError("Login failed. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -41,45 +41,49 @@ const Login: React.FC = () => {
             <Box
                 sx={{
                     marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    minHeight: '80vh',
-                    justifyContent: 'center',
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    minHeight: "80vh",
+                    justifyContent: "center",
                 }}
             >
                 <Paper
                     elevation={3}
                     sx={{
                         padding: 4,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        width: '100%',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        width: "100%",
                     }}
                 >
                     <Box
                         sx={{
-                            backgroundColor: 'primary.main',
-                            color: 'white',
+                            backgroundColor: "primary.main",
+                            color: "white",
                             p: 1,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             mb: 2,
                         }}
                     >
                         <Lock />
                     </Box>
-                    
+
                     <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
                         Sign In
                     </Typography>
 
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2, textAlign: "center" }}
+                    >
                         Sykell URL Analyzer
                     </Typography>
 
                     {error && (
-                        <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+                        <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
                             {error}
                         </Alert>
                     )}
@@ -87,7 +91,7 @@ const Login: React.FC = () => {
                     <Box
                         component="form"
                         onSubmit={handleSubmit}
-                        sx={{ width: '100%' }}
+                        sx={{ width: "100%" }}
                     >
                         <TextField
                             margin="normal"
@@ -122,11 +126,19 @@ const Login: React.FC = () => {
                             sx={{ mt: 3, mb: 2, py: 1.5 }}
                             disabled={loading || !username || !password}
                         >
-                            {loading ? <CircularProgress size={24} /> : 'Sign In'}
+                            {loading ? (
+                                <CircularProgress size={24} />
+                            ) : (
+                                "Sign In"
+                            )}
                         </Button>
                     </Box>
 
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 2, textAlign: "center" }}
+                    >
                         Default credentials: admin / admin
                     </Typography>
                 </Paper>
