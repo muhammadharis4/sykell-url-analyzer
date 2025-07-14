@@ -512,12 +512,22 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
     };
 
     return (
-        <Box sx={{ width: "100%" }}>
+        <Box
+            sx={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+            }}
+        >
             <Paper
                 sx={{
                     width: "100%",
+                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
+                    minHeight: 0,
                 }}
             >
                 <Toolbar sx={{ pl: { sm: 2 }, pr: { xs: 1, sm: 1 } }}>
@@ -741,7 +751,7 @@ const Dashboard: React.FC<DashboardProps> = ({ refreshTrigger }) => {
                     </Typography>
                 </Box>
 
-                <TableContainer>
+                <TableContainer sx={{ flex: 1, minHeight: 0 }}>
                     <Table stickyHeader>
                         <TableHead>
                             <TableRow>

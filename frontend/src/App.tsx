@@ -39,18 +39,20 @@ function App() {
                             sx={{
                                 display: "flex",
                                 flexDirection: "column",
-                                minHeight: "100vh",
+                                height: "100vh",
+                                minHeight: 0,
                             }}
                         >
                             <Header onUrlAdded={handleUrlAdded} />
                             <Box
                                 component="main"
                                 sx={{
-                                    flexGrow: 1,
+                                    flex: "1 1 auto",
                                     p: 3,
                                     display: "flex",
                                     flexDirection: "column",
                                     minHeight: 0,
+                                    height: "100%",
                                 }}
                             >
                                 <Routes>
