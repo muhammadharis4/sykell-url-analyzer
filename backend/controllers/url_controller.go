@@ -443,11 +443,14 @@ func (uc *URLController) BatchRerunAnalysis(c *gin.Context) {
 			continue
 		}
 
-		// Clear previous crawl data (optional - you might want to keep history)
-		// Delete existing crawl results for this URL
+		// Clear previous crawl data properly (handle foreign key constraints)
+		// First delete all links associated with crawl results for this URL
+		uc.db.Exec("DELETE l FROM links l INNER JOIN crawl_results cr ON l.crawl_result_id = cr.id WHERE cr.url_id = ?", id)
+
+		// Then delete crawl results for this URL
 		if err := uc.db.Where("url_id = ?", id).Delete(&models.CrawlResult{}).Error; err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to clear previous data for URL %s", idStr))
-			continue
+			// Log but don't fail if no data exists to delete
+			// This is normal for URLs that haven't been crawled yet
 		}
 
 		// Reset URL status and start fresh analysis

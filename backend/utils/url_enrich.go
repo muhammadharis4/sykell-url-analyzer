@@ -10,7 +10,8 @@ import (
 // EnrichURL returns a map with all requested fields for a given URL
 func EnrichURL(db *gorm.DB, url models.URL) map[string]interface{} {
 	var crawlResult models.CrawlResult
-	crawlResultExists := db.Where("url_id = ?", url.ID).Order("crawled_at desc").First(&crawlResult).Error == nil
+	err := db.Where("url_id = ?", url.ID).Order("crawled_at desc").First(&crawlResult).Error
+	crawlResultExists := err == nil
 
 	var brokenLinks int64
 	if crawlResultExists {

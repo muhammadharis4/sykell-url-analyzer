@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"golang.org/x/net/html"
 	"gorm.io/gorm"
-	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 )
 
 type CrawlerService struct {
@@ -22,15 +22,22 @@ func NewCrawlerService(db *gorm.DB) *CrawlerService {
 
 // CrawlURL performs the actual website analysis
 func (c *CrawlerService) CrawlURL(urlID uint) error {
-	// Update status to running
-	if err := c.db.Model(&models.URL{}).Where("id = ?", urlID).Update("status", "running").Error; err != nil {
-		return err
-	}
-
-	// Get the URL record
+	// Get the URL record first to check current status
 	var urlModel models.URL
 	if err := c.db.First(&urlModel, urlID).Error; err != nil {
 		return err
+	}
+
+	// Check if already completed to avoid re-crawling unnecessarily
+	if urlModel.Status == "completed" {
+		return nil // Already completed, no need to crawl again
+	}
+
+	// Update status to running only if not already running
+	if urlModel.Status != "running" {
+		if err := c.db.Model(&urlModel).Update("status", "running").Error; err != nil {
+			return err
+		}
 	}
 
 	// Perform the crawl
@@ -255,7 +262,7 @@ func (c *CrawlerService) checkLinkAccessibility(result *models.CrawlResult) {
 
 	for i := range result.Links {
 		link := &result.Links[i]
-		
+
 		// Skip checking very long URLs or non-HTTP schemes
 		if len(link.URL) > 2000 || (!strings.HasPrefix(link.URL, "http://") && !strings.HasPrefix(link.URL, "https://")) {
 			link.StatusCode = 0
