@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     AppBar,
     Toolbar,
@@ -19,7 +20,7 @@ import { errorHandler } from "../utils/errorHandler";
 
 /**
  * Header component with navigation and URL addition functionality
- * Provides a clean interface for adding new URLs to analyze
+ * Provides a clean interface for adding new URLs to analyze with smart URL processing
  */
 interface HeaderProps {
     onMenuClick?: () => void;
@@ -27,34 +28,59 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
+    const navigate = useNavigate();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [url, setUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    /**
+     * Smart URL processing - automatically adds protocol and handles common formats
+     * @param inputUrl - Raw URL input from user
+     * @returns Properly formatted URL
+     */
+    const processUrl = (inputUrl: string): string => {
+        let processedUrl = inputUrl.trim().toLowerCase();
+
+        // Remove common prefixes that users might add
+        processedUrl = processedUrl.replace(/^(https?:\/\/)?(www\.)?/, "");
+
+        // Add https:// prefix (more secure default)
+        processedUrl = `https://www.${processedUrl}`;
+
+        return processedUrl;
+    };
+
     const handleAddUrl = async () => {
         if (!url.trim()) {
-            errorHandler.showWarning("Please enter a valid URL");
+            errorHandler.showWarning("Please enter a URL");
             return;
         }
 
+        // Process the URL to add proper formatting
+        const processedUrl = processUrl(url);
+
         // Basic URL validation
         try {
-            new URL(url);
+            new URL(processedUrl);
         } catch {
-            errorHandler.showWarning("Please enter a valid URL format");
+            errorHandler.showWarning(
+                "Please enter a valid domain name (e.g., example.com, google.com, github.io)"
+            );
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const response = await addUrl(url);
+            const response = await addUrl(processedUrl);
 
             if (!response.isSuccess) {
                 errorHandler.handleApiError(response, "Failed to add URL");
                 return;
             }
 
-            errorHandler.showSuccess("URL added successfully!");
+            errorHandler.showSuccess(
+                "URL added successfully and analysis started!"
+            );
             setUrl("");
             setIsDialogOpen(false);
 
@@ -102,13 +128,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                     </Typography>
 
                     <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                        <Button color="inherit" startIcon={<Dashboard />}>
+                        <Button
+                            color="inherit"
+                            startIcon={<Dashboard />}
+                            onClick={() => navigate("/")}
+                            sx={{ textTransform: "none" }}
+                        >
                             Dashboard
                         </Button>
                         <Button
                             color="inherit"
                             startIcon={<Add />}
                             onClick={() => setIsDialogOpen(true)}
+                            sx={{ textTransform: "none" }}
                         >
                             Add URL
                         </Button>
@@ -131,7 +163,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                         Add New URL
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Enter a URL to analyze its content and structure
+                        Enter a website URL to analyze. We'll automatically add
+                        https:// and www for you!
                     </Typography>
                 </DialogTitle>
 
@@ -140,7 +173,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                         autoFocus
                         fullWidth
                         label="Website URL"
-                        placeholder="https://example.com"
+                        placeholder="example.com or domain.org"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         disabled={isSubmitting}
@@ -150,7 +183,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onUrlAdded }) => {
                             }
                         }}
                         sx={{ mt: 1 }}
-                        helperText="Make sure to include http:// or https://"
+                        helperText={
+                            url.trim()
+                                ? `Will analyze: ${processUrl(url)}`
+                                : "Just enter the domain name - we'll handle the rest!"
+                        }
                     />
                 </DialogContent>
 

@@ -14,7 +14,7 @@ func NewURLValidationService() *URLValidationService {
 	return &URLValidationService{}
 }
 
-// ValidateAndSanitizeURL validates and sanitizes a URL string
+// ValidateAndSanitizeURL validates and sanitizes a URL string with intelligent processing
 func (v *URLValidationService) ValidateAndSanitizeURL(rawURL string) (string, error) {
 	// Trim whitespace
 	rawURL = strings.TrimSpace(rawURL)
@@ -23,13 +23,11 @@ func (v *URLValidationService) ValidateAndSanitizeURL(rawURL string) (string, er
 		return "", fmt.Errorf("URL cannot be empty")
 	}
 
-	// Add http:// if no scheme is provided
-	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
-		rawURL = "http://" + rawURL
-	}
+	// Smart URL processing - handle various input formats
+	processedURL := v.processURL(rawURL)
 
 	// Parse and validate URL
-	parsedURL, err := url.Parse(rawURL)
+	parsedURL, err := url.Parse(processedURL)
 	if err != nil {
 		return "", fmt.Errorf("invalid URL format: %v", err)
 	}
@@ -41,6 +39,21 @@ func (v *URLValidationService) ValidateAndSanitizeURL(rawURL string) (string, er
 
 	// Return the cleaned URL
 	return parsedURL.String(), nil
+}
+
+// processURL intelligently processes raw URL input to create a valid URL
+func (v *URLValidationService) processURL(rawURL string) string {
+	// Convert to lowercase for processing
+	processedURL := strings.ToLower(rawURL)
+
+	// Remove any existing protocol and www prefix to start clean
+	processedURL = strings.TrimPrefix(processedURL, "https://")
+	processedURL = strings.TrimPrefix(processedURL, "http://")
+	processedURL = strings.TrimPrefix(processedURL, "www.")
+
+	// Add https:// and www. for better compatibility
+	// Most modern websites support HTTPS and www redirects
+	return "https://www." + processedURL
 }
 
 // IsValidHTTPURL checks if the URL is a valid HTTP/HTTPS URL
