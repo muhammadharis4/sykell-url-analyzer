@@ -3,19 +3,18 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/config"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/models"
 	"github.com-personal/muhammadharis4/sykell-url-analyzer/backend/routes"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
-func main() {
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
-	}
+func init() {
+	_ = godotenv.Load()
+}
 
+func main() {
 	// Load configuration
 	cfg := config.Load()
 
@@ -59,7 +58,7 @@ func main() {
 	log.Printf("🚀 Server starting on port %s", port)
 	log.Printf("🔗 Health check: http://localhost:%s/health", port)
 	log.Printf("🗄️  Database: %s@%s:%s/%s", cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName)
-	
+
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
