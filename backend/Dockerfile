@@ -23,5 +23,6 @@ EXPOSE 8080
 # Use environment variable for Gin
 ENV GIN_MODE=release
 
+COPY wait-for-db.sh .
 RUN chmod +x wait-for-db.sh
 CMD ["./wait-for-db.sh", "./backend"]
