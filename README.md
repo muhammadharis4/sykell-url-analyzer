@@ -97,4 +97,3 @@ See `docker-compose.yml` for all environment variables and their defaults. You c
 -   For development, you can run backend and frontend separately without Docker.
 
 ---
-
