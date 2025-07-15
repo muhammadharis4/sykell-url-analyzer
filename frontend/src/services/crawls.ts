@@ -42,12 +42,9 @@ export const getUrlsWithCrawls = async () => {
  */
 export const crawlUrl = async (id: string) => {
     try {
-        const response = await fetch(
-            `http://localhost:8080/api/urls/${id}/crawl`,
-            {
-                method: "GET",
-            }
-        );
+        const response = await apiRequest(`/api/urls/${id}/crawl`, {
+            method: "GET",
+        });
 
         if (!response.ok) {
             return {
@@ -118,16 +115,10 @@ export const addUrl = async (url: string) => {
  */
 export const startProcessingUrls = async (ids: string[]) => {
     try {
-        const response = await fetch(
-            "http://localhost:8080/api/urls/batch/start",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ids }),
-            }
-        );
+        const response = await apiRequest(`/api/urls/batch/start`, {
+            method: "POST",
+            body: JSON.stringify({ ids }),
+        });
 
         if (!response.ok) {
             return {
@@ -161,16 +152,10 @@ export const startProcessingUrls = async (ids: string[]) => {
  */
 export const stopProcessingUrls = async (ids: string[]) => {
     try {
-        const response = await fetch(
-            "http://localhost:8080/api/urls/batch/stop",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ids }),
-            }
-        );
+        const response = await apiRequest(`/api/urls/batch/stop`, {
+            method: "POST",
+            body: JSON.stringify({ ids }),
+        });
 
         if (!response.ok) {
             return {
@@ -204,16 +189,10 @@ export const stopProcessingUrls = async (ids: string[]) => {
  */
 export const deleteUrls = async (ids: string[]) => {
     try {
-        const response = await fetch(
-            "http://localhost:8080/api/urls/batch/delete",
-            {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ids }),
-            }
-        );
+        const response = await apiRequest(`/api/urls/batch/delete`, {
+            method: "DELETE",
+            body: JSON.stringify({ ids }),
+        });
 
         if (!response.ok) {
             return {
@@ -247,16 +226,10 @@ export const deleteUrls = async (ids: string[]) => {
  */
 export const rerunAnalysis = async (ids: string[]) => {
     try {
-        const response = await fetch(
-            "http://localhost:8080/api/urls/batch/rerun",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ids }),
-            }
-        );
+        const response = await apiRequest(`/api/urls/batch/rerun`, {
+            method: "POST",
+            body: JSON.stringify({ ids }),
+        });
 
         if (!response.ok) {
             return {
@@ -290,12 +263,9 @@ export const rerunAnalysis = async (ids: string[]) => {
  */
 export const startUrlProcessing = async (id: string) => {
     try {
-        const response = await fetch(
-            `http://localhost:8080/api/urls/${id}/start`,
-            {
-                method: "POST",
-            }
-        );
+        const response = await apiRequest(`/api/urls/${id}/start`, {
+            method: "POST",
+        });
 
         if (!response.ok) {
             return {
@@ -329,12 +299,9 @@ export const startUrlProcessing = async (id: string) => {
  */
 export const stopUrlProcessing = async (id: string) => {
     try {
-        const response = await fetch(
-            `http://localhost:8080/api/urls/${id}/stop`,
-            {
-                method: "POST",
-            }
-        );
+        const response = await apiRequest(`/api/urls/${id}/stop`, {
+            method: "POST",
+        });
 
         if (!response.ok) {
             return {
